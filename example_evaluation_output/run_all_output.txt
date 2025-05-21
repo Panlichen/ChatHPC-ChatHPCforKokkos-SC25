@@ -327,5 +327,5 @@ uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc-data-to-md evaluatio
 
 *** Evaluate OpenAI gpt-4o base model ***
 Error: OPENAI_API_KEY is not set.
-Please export your key if you would like to evauate the OpenAI gpt-4o base model.
+Please export your key if you would like to evaluate the OpenAI gpt-4o base model.
 export OPENAI_API_KEY=your-key-here
