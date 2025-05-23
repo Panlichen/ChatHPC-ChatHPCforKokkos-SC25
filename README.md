@@ -10,17 +10,17 @@ See [ChatHPC App README](C1_ChatHPC_Lib/ChatHPC-app-v25.4.1/README.md) for more 
 
 ### Software
 
-This repository's scripts depend on [uv](https://docs.astral.sh/uv/) to build the python virtual environment and to run the software with all the correct dependencies installed. A full list of the dependencies can be found in the `C1_ChatHPC_Lib/ChatHPC-app-v25.4.1/pyproject.toml` file. Please install uv, using the standard instructions, [installing uv](https://docs.astral.sh/uv/getting-started/installation/). This repostory was developed on an Ubuntu 22.04.5 LTS system and should work on any modern Linux system.
+This repository's scripts depend on [uv](https://docs.astral.sh/uv/) to build the python virtual environment and to run the software with all the correct dependencies installed. A full list of the dependencies can be found in the `C1_ChatHPC_Lib/ChatHPC-app-v25.4.1/pyproject.toml` file. Please install uv, using the standard instructions, [installing uv](https://docs.astral.sh/uv/getting-started/installation/). This repository was developed on an Ubuntu 22.04.5 LTS system and should work on any modern Linux system.
 
 ### Hardware
 
-This repository was tested on systems with Ampere A100 and Hopper H100 GPUs. However, this respository should work on any system supported by the upstream Hugging Face Trainer and PyTorch Libraries. 
+This repository was tested on systems with Ampere A100 and Hopper H100 GPUs. However, this repository should work on any system supported by the upstream Hugging Face Trainer and PyTorch Libraries. 
 
 ## Directory Structure
 
 ```txt
 ChatHPC-ChatKokkos-SC25
-├── 1_setup.sh — Setup the program in a python virtual environment and download the base code-llama model.
+├── 1_setup.sh — Set up the program in a python virtual environment and download the base code-llama model.
 ├── 2_train.sh — Train ChatKokkos Initial and ChatKokkos Refinement.
 ├── 3_verify.sh — Verify trained models on training data.
 ├── 4_evaluate.sh — Test trained models on validation data.
@@ -29,11 +29,11 @@ ChatHPC-ChatKokkos-SC25
 ├── C1_ChatHPC_Lib — ChatHPC Library contribution artifact.
 │   └── ChatHPC-app-v25.4.1 — Copy of ChatHPC-app at version 25.4.1
 ├── C2_Kokkos_Dataset — Kokkos data contribution artifact.
-│   ├── kokkos_create_context_initial.json — Dataset for training the inital  model.
+│   ├── kokkos_create_context_initial.json — Dataset for training the initial  model.
 │   ├── kokkos_create_context_refinement.json — Dataset for training the refined model.
 │   └── kokkos_testing.yaml — validation testing data.
 ├── output — Trained models.
-├── config_initial.json — Config for training/running the inital model.
+├── config_initial.json — Config for training/running the initial model.
 ├── config_refinement.json — Config for training/running the refined model.
 ├── prompt_template.txt — Prompt template used for ChatKokkos.
 └── run_all.sh — Run all the reproduction scripts.

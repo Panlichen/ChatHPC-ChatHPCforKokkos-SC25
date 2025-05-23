@@ -8,7 +8,7 @@ app = marimo.App()
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Fine-tunning ChatKokkos Example""")
+    mo.md(r"""# Fine-tuning ChatKokkos Example""")
 
 
 @app.cell(hide_code=True)

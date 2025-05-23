@@ -117,12 +117,12 @@ def get_next_version(version_override: str | None = None, use_last_commit_date: 
 
     # Get the date component
     if use_last_commit_date:
-        # Get the year via git without the centary and not 0 padding
+        # Get the year via git without the century and not 0 padding
         year = int(run("git log -1 --format=%cd --date=local --date=format:'%Y'").strip()[-2:])
         # Get the month via git without 0 padding
         month = int(run("git log -1 --format=%cd --date=local --date=format:'%m'"))
     else:
-        # Get the year without the centary and not 0 padding
+        # Get the year without the century and not 0 padding
         year = int(str(datetime.datetime.now(tz=TZ).year)[-2:])
         # Get the month without 0 padding
         month = datetime.datetime.now(tz=TZ).month
@@ -205,7 +205,7 @@ def update_changelog(version: Version | str, filename: str, base_url: str | None
 
         # If link point found.
         if unreleased_loc != -1:
-            # Constructure new links
+            # Construct new links
             new_links = []
             new_links.append(f"[unreleased]: {base_url}/-/compare/v{versions[0]}...main\n")
             for version_pair in pairwise(versions):
