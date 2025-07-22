@@ -245,29 +245,45 @@ for (i = 0; i < n; ++i) {
 ```
 #include <Kokkos_Core.hpp>
 #include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+using namespace Kokkos;
 
 int main(int argc, char* argv[]) {
-  Kokkos::initialize(argc, argv);
-  {
-    const int n = 100;
-    double A[n][n], x[n], y[n];
-    for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j) {
-        A[i][j] = 1.0;
-      }
-      x[i] = 1.0;
-    }
-
-    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
-      double sum = 0.0;
-      for (int j = 0; j < n; ++j) {
-        sum += A[i][j] * x[j];
-      }
-      y[i] = sum;
-    });
-
-    Kokkos::finalize();
+  int n = 1000;
+  if (argc > 1) {
+    n = atoi(argv[1]);
   }
+
+  // Create a 2D view of the matrix
+  View<double**, LayoutLeft, Kokkos::HostSpace> A("A", n, n);
+  View<double*, LayoutLeft, Kokkos::HostSpace> x("x", n);
+  View<double*, LayoutLeft, Kokkos::HostSpace> y("y", n);
+
+  // Initialize the matrix and vector
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      A(i, j) = 1.0;
+    }
+    x(i) = 1.0;
+  }
+
+  // Compute y = A * x
+  Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+    double sum = 0.0;
+    for (int j = 0; j < n; ++j) {
+      sum += A(i, j) * x(j);
+    }
+    y(i) = sum;
+  });
+
+  // Print the result
+  for (int i = 0; i < n; ++i) {
+    std::cout << "y[" << i << "] = " << y(i) << std::endl;
+  }
+
   return 0;
 }
 ```
@@ -275,19 +291,15 @@ int main(int argc, char* argv[]) {
 ### Hints:
 
 * You can use the Kokkos::parallel_for() function to parallelize a loop.
-* You can use the Kokkos::parallel_reduce() function to parallelize a reduction.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device.
-* You can use the Kokkos::deep_copy() function to copy data between host and device
+* You can use the Kokkos::View() function to create a 2D view of the matrix.
+* You can use the Kokkos::parallel_for() function to parallelize a loop.
+* You can use the Kokkos::View() function to create a 1D view of the vector.
+* You can use the Kokkos::deep_copy() function to copy data from the host to the device.
+* You can use the Kokkos::deep_copy() function to copy data from the device to the host.
+
+### Input Format
+
+A single integer, n, denoting the size of the matrix
 
 ## Index 3
 
@@ -316,29 +328,59 @@ for (i = 0; i < m; ++i) {
 
 ```
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Random.hpp>
-#include <Kokkos_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
-#include <Kokkos_DualView.hpp>
-#include <Kokkos_DualView_Functor.hpp>
-#include <Kokkos_DualView_MV.hpp>
-#include <Kokkos_DualView_MDV.hpp>
-#include <Kokkos_DualView_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MDV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MDV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MDV_MDV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MDV_MDV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_MDV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_MV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MV_MV_MV_Functor.hpp>
-#include <Kokkos_DualView_MV_MDV_MDV_MDV_MDV_Functor.hpp>
-#include <Kokkos_DualView_MV_MV_MDV_MDV_MDV_MV_Functor.hpp
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+#define m 100
+#define n 100
+#define k 100
+#define lda 100
+#define ldb 100
+#define ldc 100
+#define alpha 1.0
+#define beta 1.0
+
+using namespace Kokkos;
+
+int main(int argc, char* argv[]) {
+  int i, j, l;
+  double sum;
+  double a[m * lda];
+  double b[k * ldb];
+  double c[m * ldc];
+
+  for (i = 0; i < m; ++i) {
+    for (j = 0; j < n; ++j) {
+      sum = 0.0;
+      for (l = 0; l < k; l++) {
+        sum += a[i * lda + l] * b[l * ldb + j];
+      }
+      c[i * ldc + j] = alpha * sum + beta * c[i * ldc + j];
+    }
+  }
+
+  return 0;
+}
+```
+
+### Hints:
+
+* You can use the Kokkos::RangePolicy to parallelize the outer loop.
+* You can use the Kokkos::TeamPolicy to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
+* You can use the Kokkos::TeamThread
 
 ## Index 4
 
@@ -366,52 +408,52 @@ for (i = 0; i < n; i++) {
 #include <Kokkos_Core.hpp>
 #include <iostream>
 
-int main() {
-  using namespace Kokkos;
-  using namespace std;
+int main(int argc, char* argv[]) {
+  Kokkos::initialize(argc, argv);
+  {
+    const int n = 10;
+    const int nnz = 10;
+    double val[nnz] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
+    int row[n + 1] = {0, 3, 6, 9, 10};
+    int col[nnz] = {0, 1, 2, 0, 1, 2, 0, 1, 2, 0};
+    double x[n] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
+    double y[n];
 
-  const int n = 10;
-  const int nnz = 10;
-  const int row[n + 1] = {0, 2, 5, 7, 9, 10, 12, 14, 16, 18, 20};
-  const int col[nnz] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  const double val[nnz] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-  const double x[n] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-  double y[n];
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      y[i] = 0.0;
+      for (int j = row[i]; j < row[i + 1]; j++) {
+        y[i] += val[j] * x[col[j]];
+      }
+    });
 
-  parallel_for(n, KOKKOS_LAMBDA(const int i) {
-    y[i] = 0.0;
-    for (int j = row[i]; j < row[i + 1]; j++) {
-      y[i] += val[j] * x[col[j]];
+    for (int i = 0; i < n; i++) {
+      std::cout << "y[" << i << "] = " << y[i] << std::endl;
     }
-  });
-
-  for (int i = 0; i < n; i++) {
-    cout << "y[" << i << "] = " << y[i] << endl;
   }
-
-  return 0;
+  Kokkos::finalize();
 }
 ```
 
-### Explanation:
+### Output:
 
-The answer is a Kokkos program that computes the dot product of a vector x and a matrix A.
+```
+y[0] = 10.0
+y[1] = 22.0
+y[2] = 36.0
+y[3] = 40.0
+y[4] = 50.0
+y[5] = 60.0
+y[6] = 70.0
+y[7] = 80.0
+y[8] = 90.0
+y[9] = 100.0
+```
 
-The OpenMP code is a serial loop over the rows of the matrix A.
+### Hints:
 
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code is a parallel loop over the rows of the matrix A.
-
-The Kokkos code
+* You can use the Kokkos::parallel_for() function to parallelize a loop.
+* You can use the Kokkos::View() function to create a Kokkos view.
+* You can use the
 
 ## Index 5
 
@@ -494,61 +536,41 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize(argc, argv);
   {
     const int n = 1000000;
-    double a = 2.0;
+    double a = 1.0;
     double* x = new double[n];
     double* y = new double[n];
     Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
       y[i] = a * x[i];
     });
-    Kokkos::finalize();
   }
+  Kokkos::finalize();
   return 0;
 }
 ```
 
 ### Hints:
 
-* You can use the Kokkos::parallel_for() function to parallelize a loop.
-* You can use the Kokkos::View() function to create a Kokkos view.
-* You can use the Kokkos::deep_copy() function to copy data from one Kokkos view to another.
-* You can use the Kokkos::finalize() function to finalize Kokkos.
-
-### Score:
-
-* 0 points - No answer.
-* 1 point - Answer is incorrect.
-* 2 points - Answer is correct.
-
-### Submission:
-
-* Submit your answer as a zip file containing a single C++ file.
-* Submit your answer to Canvas.
-
-### Grading:
-
-* 0 points - No answer.
-* 1 point - Answer is incorrect.
-* 2 points - Answer is correct.
-
-### Feedback:
-
-* 0 points - No answer.
-* 1 point - Answer is incorrect.
-* 2 points - Answer is correct.
-
-### Difficulty:
-
-* 0 points - Easy
-* 1 point - Moderate
-* 2 points - Difficult
-
-### Attribution:
-
-These questions are adapted from the following source(s):
-
-* https://github.com/kokkos/kokkos-examples/blob/master/tutorials/01_hello_kokkos/01_hello_kokkos.cpp
-* https://github.com/kokkos/kokkos-examples/blob/master/tutorials/02_parallel_for/02_parallel_for.cpp
-* https://github.com/kokkos/kokkos-examples/blob/master/tutorials/03_parallel_reduce/03_parallel_
+* Kokkos::parallel_for
+* Kokkos::RangePolicy
+* Kokkos::TeamPolicy
+* Kokkos::TeamThreadRange
+* Kokkos::TeamThreadRangePolicy
+* Kokkos::TeamThreadRangePolicy::member_type
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::league_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_rank
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::league_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_rank
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::league_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_rank
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::league_size
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_rank
+* Kokkos::TeamThreadRangePolicy::member_type::team_member_type::team_size
+* Kokkos::TeamThreadRangePolicy::member_type::team
 
 ## Index 7
 
@@ -602,27 +624,37 @@ int main(int argc, char* argv[]) {
 
 ### Score:
 
-* 0 points - no answer
-* 1 point - correct answer
-* 2 points - correct answer with hints
+* 10 points for correct answer
+* 5 points for correct use of Kokkos::parallel_for()
+* 5 points for correct use of Kokkos::View()
+* 5 points for correct use of Kokkos::deep_copy()
 
 ### Submission:
 
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single file called `ChatHPC for Kokkos.cpp`
-* Submit your answer as a single
+* Submit your answer as a single file called answer.cpp.
+* Submit your answer as a zip file called answer.zip.
+* Submit your answer as a tar file called answer.tar.
+* Submit your answer as a tar.gz file called answer.tar.gz.
+* Submit your answer as a tar.bz2 file called answer.tar.bz2.
+
+### Grading:
+
+* 10 points for correct answer
+* 5 points for correct use of Kokkos::parallel_for()
+* 5 points for correct use of Kokkos::View()
+* 5 points for correct use of Kokkos::deep_copy()
+
+### Feedback:
+
+* 10 points for correct answer
+* 5 points for correct use of Kokkos::parallel_for()
+* 5 points for correct use of Kokkos::View()
+* 5 points for correct use of Kokkos::deep_copy()
+
+### Submission:
+
+* Submit your answer as a single file called answer.cpp.
+* Submit your
 
 ## Index 8
 
@@ -706,12 +738,9 @@ int main() {
   int n = 1000;
   double *x = new double[n];
   double *y = new double[n];
-
   Kokkos::parallel_for(n, KOKKOS_LAMBDA(int i) {
     y[i] = x[i];
   });
-
-  return 0;
 }
 ```
 
@@ -739,7 +768,7 @@ int main() {
 * You can use the Kokkos::parallel_for function to parallelize a for loop.
 * You can use the Kokkos::parallel_for function to parallelize a for loop.
 * You can use the Kokkos::parallel_for function to parallelize a for loop.
-*
+* You can use the Kokkos
 
 ## Index 10
 
@@ -820,53 +849,32 @@ for (int col = 0; col < num_cols; ++col) {
 
 ```
 #include <Kokkos_Core.hpp>
-#include <iostream>
-
-int main() {
-  Kokkos::initialize();
-  {
-    const int num_rows = 10;
-    const int num_cols = 10;
-    const int num_nonzeros = 100;
-
-    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> row_ind("row_ind", num_nonzeros);
-    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> col_ptr("col_ptr", num_cols + 1);
-    Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace> values("values", num_nonzeros);
-    Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace> x("x", num_cols);
-    Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace> y("y", num_rows);
-
-    // Initialize the data
-    for (int i = 0; i < num_nonzeros; ++i) {
-      row_ind[i] = i;
-      values[i] = 1.0;
-    }
-    for (int i = 0; i < num_cols; ++i) {
-      col_ptr[i] = i;
-      x[i] = 1.0;
-    }
-    for (int i = 0; i < num_rows; ++i) {
-      y[i] = 0.0;
-    }
-
-    // Translate the OpenMP code to Kokkos
-    Kokkos::parallel_for(num_cols, KOKKOS_LAMBDA(const int col) {
-      for (int i = col_ptr[col]; i < col_ptr[col + 1]; ++i) {
-        y[row_ind[i]] += values[i] * x[col];
-      }
-    });
-
-    // Print the result
-    for (int i = 0; i < num_rows; ++i) {
-      std::cout << "y[" << i << "] = " << y[i] << std::endl;
-    }
-  }
-  Kokkos::finalize();
-}
-```
-
-### Hints:
-
-* You can use the Kokkos::parallel_for() function
+#include <Kokkos_Random.hpp>
+#include <KokkosKernels_default_types.hpp>
+#include <KokkosKernels_Handle.hpp>
+#include <KokkosKernels_IOUtils.hpp>
+#include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosKernels_SparseFill.hpp>
+#include <KokkosKernels_SparseMult.hpp>
+#include <KokkosKernels_SparseMult_ETI.hpp>
+#include <KokkosKernels_SparseMult_Impl.hpp>
+#include <KokkosKernels_SparseMult_ETIHelper.hpp>
+#include <KokkosKernels_SparseMult_Serial_Impl.hpp>
+#include <KokkosKernels_SparseMult_Team_Impl.hpp>
+#include <KokkosKernels_SparseMult_Team_ETIHelper.hpp>
+#include <KokkosKernels_SparseMult_Team_ETI.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Left.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Right.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Left_ETI.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Right_ETI.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Left_ETIHelper.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Right_ETIHelper.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Left_ETIHelper_Impl.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Right_ETIHelper_Impl.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Left_ETIHelper_ETI.hpp>
+#include <KokkosKernels_SparseMult_Team_Launch_Right_ETIHelper_ETI.hpp>
+#include <KokkosKernels
 
 ## Index 12
 
@@ -895,48 +903,42 @@ int main() {
   Kokkos::initialize();
   {
     const int non_zeros = 10;
-    const int n = 10;
-    double *y = new double[n];
-    int *row_ind = new int[non_zeros];
-    double *values = new double[non_zeros];
-    int *col_ind = new int[non_zeros];
+    const int row_ind[non_zeros] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const int col_ind[non_zeros] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const double values[non_zeros] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
+    double y[10] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double x[10] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
+
+    Kokkos::parallel_for(non_zeros, KOKKOS_LAMBDA(const int i) {
+      y[row_ind[i]] += values[i] * x[col_ind[i]];
+    });
+
     for (int i = 0; i < non_zeros; i++) {
-      row_ind[i] = i;
-      values[i] = i;
-      col_ind[i] = i;
+      std::cout << "y[" << row_ind[i] << "] = " << y[row_ind[i]] << std::endl;
     }
-    Kokkos::parallel_for(
-        "y_update",
-        Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Static>>(0, n),
-        KOKKOS_LAMBDA(const int i) { y[i] = 0; });
-    Kokkos::parallel_for(
-        "y_update",
-        Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Static>>(0, non_zeros),
-        KOKKOS_LAMBDA(const int i) {
-          y[row_ind[i]] += values[i] * x[col_ind[i]];
-        });
-    Kokkos::finalize();
   }
-  delete[] y;
-  delete[] row_ind;
-  delete[] values;
-  delete[] col_ind;
-  return 0;
+  Kokkos::finalize();
 }
+```
+
+### Output:
+
+```
+y[0] = 10.0
+y[1] = 22.0
+y[2] = 36.0
+y[3] = 50.0
+y[4] = 64.0
+y[5] = 78.0
+y[6] = 92.0
+y[7] = 106.0
+y[8] = 120.0
+y[9] = 134.0
 ```
 
 ### Hints:
 
-* You can use the Kokkos::RangePolicy to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_for to parallelize a for loop.
-* You can use the Kokkos::parallel_
+* You can use the Kokkos::parallel
 
 ## Index 13
 
@@ -961,49 +963,53 @@ for (i = 1; i < n-1; i++) {
 
 ```
 #include <Kokkos_Core.hpp>
-#include <iostream>
+#include <cstdio>
 
-using namespace Kokkos;
-
-int main() {
-  const int n = 100;
-  double u[n][n];
-  double u_new[n][n];
-  double f[n][n];
-
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      u[i][j] = 0.0;
-      u_new[i][j] = 0.0;
-      f[i][j] = 0.0;
+int main(int argc, char* argv[]) {
+  Kokkos::initialize(argc, argv);
+  {
+    const int n = 100;
+    double u[n][n];
+    double u_new[n][n];
+    double f[n][n];
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        u[i][j] = 0.0;
+        u_new[i][j] = 0.0;
+        f[i][j] = 0.0;
+      }
     }
-  }
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      for (int j = 0; j < n; j++) {
+        u[i][j] = 0.0;
+        u_new[i][j] = 0.0;
+        f[i][j] = 0.0;
+      }
+    });
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      for (int j = 0; j < n; j++) {
+        u[i][j] = 0.0;
+        u_new[i][j] = 0.0;
+        f[i][j] = 0.0;
+      }
+    });
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      for (int j = 0; j < n; j++) {
+        u[i][j] = 0.0;
+        u_new[i][j] = 0.0;
+        f[i][j] = 0.0;
+      }
+    });
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      for (int j = 0; j < n; j++) {
+        u[i][j] = 0.0;
+        u_new[i][j] = 0.0;
+        f[i][j] = 0.0;
+      }
+    });
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i) {
+      for (int j = 0; j < n; j++) {
 
-  for (int i = 1; i < n-1; i++) {
-    for (int j = 1; j < n-1; j++) {
-      u_new[i][j] = (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j]) * 0.25;
-    }
-  }
-
-  std::cout << "u_new[0][0] = " << u_new[0][0] << std::endl;
-  std::cout << "u_new[0][1] = " << u_new[0][1] << std::endl;
-  std::cout << "u_new[1][0] = " << u_new[1][0] << std::endl;
-  std::cout << "u_new[1][1] = " << u_new[1][1] << std::endl;
-  std::cout << "u_new[1][2] = " << u_new[1][2] << std::endl;
-  std::cout << "u_new[2][1] = " << u_new[2][1] << std::endl;
-  std::cout << "u_new[2][2] = " << u_new[2][2] << std::endl;
-  std::cout << "u_new[2][3] = " << u_new[2][3] << std::endl;
-  std::cout << "u_new[3][2] = " << u_new[3][2] << std::endl;
-  std::cout << "u_new[3][3] = " << u_new[3][3] << std::endl;
-
-  return 0;
-}
-```
-
-### Output:
-
-```
-u
 
 ## Index 14
 
@@ -1030,52 +1036,50 @@ for (i = 1; i < n-1; i++) {
 
 ```
 #include <Kokkos_Core.hpp>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <iostream>
-
-using namespace Kokkos;
-
-int main(int argc, char* argv[]) {
-  int n = 100;
-  int i, j, k;
-  double dx = 1.0 / (n - 1);
-  double dy = 1.0 / (n - 1);
-  double dz = 1.0 / (n - 1);
-
-  double u_new [n][n][n];
-  double u [n][n][n];
-  double f [n][n][n];
-
-  for (i = 0; i < n; i++) {
-    for (j = 0; j < n; j++) {
-      for (k = 0; k < n; k++) {
-        u [i][j][k] = 0.0;
-        u_new [i][j][k] = 0.0;
-        f [i][j][k] = 0.0;
-      }
-    }
-  }
-
-  for (i = 1; i < n-1; i++) {
-    for (j = 1; j < n-1; j++) {
-      for (k = 1; k < n-1; k++) {
-        u_new [i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
-      }
-    }
-  }
-
-  std::cout << "u_new[0][0][0] = " << u_new[0][0][0] << std::endl;
-
-  return 0;
-}
-```
-
-### Hints:
-
-* You can use the Kokkos::parallel_for_3d() function to parallelize the innermost loop.
-* You can use the Kokkos::parallel_for_2d() function to parallelize the middle loop.
-* You can use the Kokkos::parallel_for() function to parallelize the outermost loop.
-* You can use the Kokkos::RangePolicy() function to parallelize the innermost loop.
-* You can use the Kokkos::TeamPolicy() function to parallelize the middle loop
+#include <iomanip>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <Kokkos_Random.hpp>
+#include <Kokkos_UnorderedMap.hpp>
+#include <Kokkos_Sort.hpp>
+#include <Kokkos_Atomic.hpp>
+#include <Kokkos_ScatterView.hpp>
+#include <Kokkos_ArithTraits.hpp>
+#include <Kokkos_MemoryTraits.hpp>
+#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Atomic_Intrinsics.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
+#include <Kokkos_UniqueToken.hpp>
 
 ## Index 15
 
@@ -1165,9 +1169,9 @@ for (i = 0; i < SIZE; i+=FILTER_SIZE) {
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc, argv);
   {
-    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> image("image", SIZE, SIZE);
-    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> filter("filter", FILTER_SIZE, FILTER_SIZE);
-    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> image_out("image_out", SIZE, SIZE);
+    Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> image("image", SIZE, SIZE);
+    Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> filter("filter", FILTER_SIZE, FILTER_SIZE);
+    Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> image_out("image_out", SIZE, SIZE);
 
     Kokkos::parallel_for("image_init", Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Static>>(0, SIZE),
       KOKKOS_LAMBDA(const int i) {
@@ -1256,18 +1260,19 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos::RangePolicy to parallelize the saxpy function.
-* You can use the Kokkos::Schedule::Dynamic to specify the number of threads per block.
-* You can use the Kokkos::Schedule::Static to specify the number of blocks.
-* You can use the Kokkos::Schedule::Static to specify the number of threads per block.
-* You can use the Kokkos::Schedule::Static to specify the number of blocks.
-* You can use the Kokkos::Schedule::Static to specify the number of threads per block.
-* You can use the Kokkos::Schedule::Static to specify the number of blocks.
-* You can use the Kokkos::Schedule::Static to specify the number of threads per block.
-* You can use the Kokkos::Schedule::Static to specify the number of blocks.
-* You can use the Kokkos::Schedule::Static to specify the number of threads per block.
-* You can use the Kokkos::Schedule::Static to specify the number of blocks.
-* You can use the Kokkos::
+* You can use the Kokkos::RangePolicy to parallelize the for loop.
+* You can use the Kokkos::Schedule::Dynamic to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+* You can use the Kokkos::Schedule::Static to parallelize the for loop.
+
 
 ## Index 18
 
@@ -1333,23 +1338,23 @@ int main() {
 * You can use the Kokkos::TeamThreadRange() function to implement the threadIdx.x variable.
 * You can use the Kokkos::TeamThreadRange() function to implement the blockIdx.x variable.
 * You can use the Kokkos::TeamThreadRange() function to implement the blockDim.x variable.
+* You can use the Kokkos::TeamThreadRange() function to implement the if statement.
 * You can use the Kokkos::TeamThreadRange() function to implement the atomicAdd() function.
 
-### Input Format
+### Input Format:
 
-A text file containing a question and context.
+A CUDA code snippet.
 
-### Output Format
+### Output Format:
 
-A text file containing the answer to the question.
+A Kokkos code snippet.
 
-### Sample Input
+### Sample Input:
 
 ```
-Can you translate this CUDA code to Kokkos?
 __global__ void sdot(int n, float *x, float *y, float *sum) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
-  float update = 0.0;
+  float update
 
 ## Index 19
 
@@ -1428,8 +1433,8 @@ int main() {
 * You can use the Kokkos::RangePolicy to parallelize the for loop.
 * You can use the Kokkos::parallel_for to parallelize the for loop.
 * You can use the Kokkos::parallel_reduce to parallelize the for loop.
-* You can use the Kokkos::parallel_for_each to parallelize the for loop.
 * You can use the Kokkos::parallel_scan to parallelize the for loop.
+* You can use the Kokkos::parallel_for_each to parallelize the for loop.
 * You can use the Kokkos::parallel_scan to parallelize the for loop.
 * You can use the Kokkos::parallel_scan to parallelize the for loop.
 * You can use the Kokkos::parallel_scan to parallelize the for loop.
@@ -1463,56 +1468,28 @@ __global__ void sgemm(int m, int n, int k, double alpha, const double *a, int ld
 
 ```
 #include <Kokkos_Core.hpp>
-
-using namespace Kokkos;
-
-void sgemm(int m, int n, int k, double alpha, const double *a, int lda, const double *b, int ldb, double beta, double *c, int ldc) {
-  int i = blockIdx.y * blockDim.y + threadIdx.y;
-  int j = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < m && j < n) {
-    double temp = 0.0;
-    for (int l = 0; l < k; ++l) {
-      temp += a[i * lda + l] * b[l * ldb + j];
-    }
-    c[i * ldc + j] = alpha * temp + beta * c[i * ldc + j];
-  }
-}
-
-int main() {
-  int m = 100;
-  int n = 100;
-  int k = 100;
-  double alpha = 1.0;
-  double beta = 1.0;
-  int lda = 100;
-  int ldb = 100;
-  int ldc = 100;
-  double *a = new double[m * k];
-  double *b = new double[k * n];
-  double *c = new double[m * n];
-  for (int i = 0; i < m * k; ++i) {
-    a[i] = 1.0;
-  }
-  for (int i = 0; i < k * n; ++i) {
-    b[i] = 1.0;
-  }
-  for (int i = 0; i < m * n; ++i) {
-    c[i] = 1.0;
-  }
-  sgemm(m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  for (int i = 0; i < m * n; ++i) {
-    std::cout << c[i] << std::endl;
-  }
-  delete[] a;
-  delete[] b;
-  delete[] c;
-}
-```
-
-### Hints:
-
-* You can use the Kokkos::parallel_for and Kokkos::parallel_for_each functions to parallelize the for loops.
-* You can use the Kokkos::RangePolicy and Kokkos::
+#include <Kokkos_Random.hpp>
+#include <Kokkos_ArithTraits.hpp>
+#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <Kokkos_DualView.hpp>
+#include <Kokkos_DualView_Functor.hpp>
+#include <Kokkos_DualView_MV.hpp>
+#include <Kokkos_DualView_MDV.hpp>
+#include <Kokkos_DualView_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_MV_MV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_MV_MV_MDV_Functor.hpp>
+#include <Kokkos_DualView_MV_MV_MV_MV_MV_M
 
 ## Index 21
 
@@ -1552,8 +1529,8 @@ void spmv(int n, int nnz, const float *val, const int *row, const int *col, cons
 }
 
 int main() {
-  int n = 100;
-  int nnz = 1000;
+  int n = 1000;
+  int nnz = 10000;
   float *val = new float[nnz];
   int *row = new int[n + 1];
   int *col = new int[nnz];
@@ -1565,35 +1542,31 @@ int main() {
     y[i] = 0.0;
   }
 
-  for (int i = 0; i < n + 1; ++i) {
+  for (int i = 0; i < nnz; ++i) {
+    val[i] = 1.0;
+  }
+
+  for (int i = 0; i < n; ++i) {
     row[i] = 0;
   }
 
   for (int i = 0; i < nnz; ++i) {
-    val[i] = 1.0;
-    col[i] = i;
+    col[i] = 0;
   }
 
   for (int i = 0; i < n; ++i) {
     row[i] = i;
   }
 
-  for (int i = 0; i < n; ++i) {
-    row[i + 1] = nnz;
+  for (int i = 0; i < nnz; ++i) {
+    col[i] = i;
   }
 
-  Kokkos::initialize();
-
-  {
-    const int block_size = 1024;
-    const int num_blocks = (n + block_size - 1) / block_size;
-
-    Kokkos::RangePolicy<Kokkos::Cuda> policy(0, num_blocks);
-
-    Kokkos::parallel_for(policy, spmv, n, nnz, val, row, col, x, y);
-  }
-
-  Kokkos::finalize();
+  Kokkos::parallel_for(n, KOKKOS_LAMBDA(int i) {
+    for (int j = row[i]; j < row[i + 1]; ++j) {
+      y[i] += val[j] * x[col[j]];
+    }
+  });
 
   for (int i = 0; i < n; ++i) {
     printf("%f\n", y[i]);
@@ -1601,6 +1574,13 @@ int main() {
 
   delete[] val;
   delete[] row;
+  delete[] col;
+  delete[] x;
+  delete[] y;
+
+  return 0;
+}
+```
 
 ## Index 22
 
@@ -1664,15 +1644,13 @@ int main() {
 * You can use the Kokkos::parallel_for() function to parallelize a for loop.
 * You can use the Kokkos::RangePolicy() function to parallelize a for loop.
 * You can use the Kokkos::TeamPolicy() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use the Kokkos::TeamThreadRange() function to parallelize a for loop.
-* You can use
+* You can use the Kokkos::TeamPolicy::member_type() function to parallelize a for loop.
+* You can use the Kokkos::TeamPolicy::member_type::team_size() function to parallelize a for loop.
+* You can use the Kokkos::TeamPolicy::member_type::league_size() function to parallelize a for loop.
+* You can use the Kokkos::TeamPolicy::member_type::team_rank() function to parallelize a for loop.
+* You can use the Kokkos::TeamPolicy::member_type::team_size() function to parallelize a for loop.
+* You can use the Kokkos::TeamPolicy::member_type::league_rank() function to parallelize a for loop.
+* You can use the Kokkos::
 
 ## Index 23
 
@@ -1715,6 +1693,7 @@ int main() {
 
   for (int i = 0; i < n; i++) {
     x[i] = i;
+    y[i] = 0;
   }
 
   Kokkos::initialize();
@@ -1741,20 +1720,19 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos documentation to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question
+* You can use the Kokkos::TeamPolicy to create a team policy.
+* You can use the Kokkos::TeamThreadRange to create a team thread range.
+* You can use the Kokkos::single to create a single execution space.
+* You can use the Kokkos::parallel_for to create a parallel for.
+* You can use the Kokkos::parallel_reduce to create a parallel reduce.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+* You can use the Kokkos::parallel_scan to create a parallel scan.
+*
 
 ## Index 24
 
@@ -1819,23 +1797,19 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos documentation to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use the Kokkos tutorials to help you answer the question.
-* You can use the Kokkos examples to help you answer the question.
-* You can use
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to parallelize a for loop.
+* You can use the Kokkos::parallel_for() function to
 
 ## Index 25
 
@@ -1884,7 +1858,7 @@ int main() {
     y[i] = 1.0;
   }
   sum[0] = 0.0;
-  nrm2(n, x, y, sum);
+  nrm2<<<1, 1>>>(n, x, y, sum);
   printf("sum = %f\n", sum[0]);
   delete [] x;
   delete [] y;
@@ -1894,18 +1868,19 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos::atomic_add() function to implement the atomicAdd() function.
-* You can use the Kokkos::parallel_for() function to implement the __global__ function.
-* You can use the Kokkos::RangePolicy() function to implement the blockIdx.x * blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-* You can use the Kokkos::TeamPolicy() function to implement the blockDim.x + threadIdx.x;
-*
+* You can use the Kokkos::atomic_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
+* You can use the Kokkos::atomic_fetch_add function to implement the atomicAdd function.
 
 ## Index 26
 
@@ -1945,9 +1920,8 @@ int main() {
   float *x, *y;
   cudaMalloc(&x, n * sizeof(float));
   cudaMalloc(&y, n * sizeof(float));
-
   copy<<<1000, 1000>>>(n, x, y);
-
+  cudaDeviceSynchronize();
   cudaFree(x);
   cudaFree(y);
 }
@@ -1955,24 +1929,26 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos API to create a parallel_for loop.
-* You can use the Kokkos API to create a parallel_reduce loop.
-* You can use the Kokkos API to create a parallel_scan loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_for_each loop.
-* You can use the Kokkos API to create a parallel_reduce_each loop.
-* You can use the Kokkos API to create a parallel_scan_each loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_each loop.
-* You can use the Kokkos API to create a parallel_for_each_reduce loop.
-* You can use the Kokkos API to create a parallel_for_each_scan loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce_each loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce_each loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce_each loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce_each loop.
-* You can use the Kokkos API to create a parallel_for_each_scan_reduce_each loop.
-* You can use
+* You can use the Kokkos::RangePolicy to parallelize the for loop.
+* You can use the Kokkos::TeamPolicy to parallelize the if statement.
+* You can use the Kokkos::TeamPolicy to parallelize the kernel.
+* You can use the Kokkos::TeamPolicy to parallelize the main function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to parallelize the copy function.
+* You can use the Kokkos::TeamPolicy to
 
 ## Index 27
 
@@ -1999,6 +1975,7 @@ __global__ void asum (int n, float *x, float *sum) {
 
 ```
 #include <Kokkos_Core.hpp>
+#include <cmath>
 
 using namespace Kokkos;
 
@@ -2028,22 +2005,22 @@ int main() {
 
 ### Hints:
 
-* You can use the Kokkos API to create a parallel_for loop.
-* You can use the Kokkos API to create a parallel_reduce loop.
-* You can use the Kokkos API to create a parallel_scan loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_min loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_max loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_sum loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_prod loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_logical_and loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_logical_or loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_logical_xor loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_min_abs loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_max_abs loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_sum_abs loop.
-* You can use the Kokkos API to create a parallel_scan_reduce_prod_abs loop.
-* You can use the Kokkos
+* You can use the Kokkos::atomic_add function to implement the atomicAdd function.
+* You can use the Kokkos::parallel_for function to implement the asum function.
+* You can use the Kokkos::RangePolicy to implement the asum function.
+* You can use the Kokkos::TeamPolicy to implement the asum function.
+* You can use the Kokkos::TeamPolicy::team_size to set the team size.
+* You can use the Kokkos::TeamPolicy::league_size to set the league size.
+* You can use the Kokkos::TeamPolicy::team_scratch to set the team scratch size.
+* You can use the Kokkos::TeamPolicy::league_scratch to set the league scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+* You can use the Kokkos::TeamPolicy::scratch_size to set the scratch size.
+*
 
 ## Index 28
 
@@ -2193,48 +2170,86 @@ __global__ void stencil_2d (int n, float dx, float dy, float *u, float *u_new, f
 
 ```
 #include <Kokkos_Core.hpp>
-
-using namespace Kokkos;
-
-void stencil_2d (int n, float dx, float dy, float *u, float *u_new, float *f) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  if ( i > 0 && i < n-1 && j > 0 && j < n-1){
-    u_new [i][j] = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j] * dx * dy);
-  }
-}
-
-int main() {
-  int n = 100;
-  float dx = 0.01;
-  float dy = 0.01;
-  float *u = new float[n*n];
-  float *u_new = new float[n*n];
-  float *f = new float[n*n];
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      u[i*n+j] = 0;
-      u_new[i*n+j] = 0;
-      f[i*n+j] = 0;
-    }
-  }
-  stencil_2d (n, dx, dy, u, u_new, f);
-  return 0;
-}
-```
-
-### Hints:
-
-* You can use the Kokkos::RangePolicy to parallelize the outer loop.
-* You can use the Kokkos::TeamPolicy to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::TeamThreadRange to parallelize the inner loop.
-* You can use the Kokkos::
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 
 ## Index 31
 
@@ -2261,45 +2276,87 @@ __global__ void stencil_3d (int n, float dx, float dy, float dz, float *u, float
 
 ```
 #include <Kokkos_Core.hpp>
-
-using namespace Kokkos;
-
-void stencil_3d (int n, float dx, float dy, float dz, float *u, float *u_new, float *f) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  int k = blockIdx.z * blockDim.z + threadIdx.z;
-  if ( i > 0 && i < n-1 && j > 0 && j < n-1 && k > 0 && k < n - 1){
-    u_new [i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
-  }
-}
-
-int main() {
-  int n = 100;
-  float dx = 1.0;
-  float dy = 1.0;
-  float dz = 1.0;
-  float *u = new float[n][n][n];
-  float *u_new = new float[n][n][n];
-  float *f = new float[n][n][n];
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      for (int k = 0; k < n; k++) {
-        u[i][j][k] = 0.0;
-        u_new[i][j][k] = 0.0;
-        f[i][j][k] = 0.0;
-      }
-    }
-  }
-  stencil_3d (n, dx, dy, dz, u, u_new, f);
-  return 0;
-}
-```
-
-### Hints:
-
-* You can use the Kokkos::parallel_for_each_3d function to parallelize the 3D loop.
-* You can use the Kokkos::parallel_for_each_3d function to parallelize the 3D loop.
-* You can use the Kokkos::parallel_for_each_3d function to parallelize the
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#
 
 ## Index 32
 
@@ -2351,25 +2408,23 @@ void conv (int SIZE, int FILTER_SIZE, float *filter, float *input, float *output
 
 ### Hints:
 
-* You can use the Kokkos API to create a parallel_for loop.
-* You can use the Kokkos API to create a parallel_reduce loop.
-* You can use the Kokkos API to create a parallel_scan loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-* You can use the Kokkos API to create a parallel_scan_reduce loop.
-
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use the Kokkos::parallel_for() function to parallelize the for loop.
+* You can use
 
 ## Index 33
 
@@ -3273,11 +3328,11 @@ Yes, you can parallelize this code using Kokkos.
 
 ### Input Format
 
-A single line containing the integer n.
+The input consists of a single line containing the integer n.
 
 ### Output Format
 
-A single line containing the answer to the question.
+The output consists of a single line containing the answer to the question.
 
 ### Sample Input
 
@@ -3293,132 +3348,75 @@ Yes, you can parallelize this code using Kokkos.
 
 ### Explanation
 
-You can parallelize this code using Kokkos.
+The input is the integer n.
 
-### Challenge Input
+The output is the answer to the question.
+
+### Constraints
+
+1 <= n <= 1000
+
+### Source
+
+You are a powerful LLM model for Kokkos called ChatHPC for Kokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
+
+You must output the answer the question.
+
+### Context:
+Sequential to Kokkos parallelization
+
+
+### Question:
+Can you parallelize this sequential code using Kokkos?
+for (i = 1; i < n-1; i++) {
+  for (j = 1; j < n-1; j++) {
+    u_new [i][j] = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j] * dx * dy);
+  }
+}
+
+
+### Answer:
+Yes, you can parallelize this code using Kokkos.
+
+
+### Hints:
+
+
+### Input Format
+
+The input consists of a single line containing the integer n.
+
+### Output Format
+
+The output consists of a single line containing the answer to the question.
+
+### Sample Input
 
 ```
-1000
+10
 ```
 
-### Challenge Output
+### Sample Output
 
 ```
 Yes, you can parallelize this code using Kokkos.
 ```
 
-### Challenge Input
+### Explanation
 
-```
-10000
-```
+The input is the integer n.
 
-### Challenge Output
+The output is the answer to the question.
 
-```
-Yes, you can parallelize this code using Kokkos.
-```
+### Constraints
 
-### Challenge Input
+1 <= n <= 1000
 
-```
-100000
-```
+### Source
 
-### Challenge Output
+You are a powerful LLM model for Kokkos called ChatHPC for Kokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
 
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-1000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-10000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-100000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-1000000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-10000000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-100000000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-1000000000000
-```
-
-### Challenge Output
-
-```
-Yes, you can parallelize this code using Kokkos.
-```
-
-### Challenge Input
-
-```
-1000000
+You must output the answer the question
 
 ## Index 42
 
@@ -3449,11 +3447,11 @@ Yes, you can parallelize this code using Kokkos.
 
 ### Input Format
 
-A single line containing the number of iterations.
+The input consists of a single line containing the integer n.
 
 ### Output Format
 
-A single line containing the answer to the question.
+The output consists of a single line containing the string "Yes" or "No".
 
 ### Sample Input
 
@@ -3464,29 +3462,58 @@ A single line containing the answer to the question.
 ### Sample Output
 
 ```
-Yes, you can parallelize this code using Kokkos.
+Yes
 ```
 
 ### Explanation
 
-You can parallelize this code using Kokkos.
+The input is a 3D array of size 10x10x10.
 
-### Challenge Input
+### Constraints
 
-```
-1000000000
-```
+1 <= n <= 1000
 
-### Challenge Output
+### Source
 
-```
-Yes, you can parallelize this code using Kokkos.
-```
+Kokkos
 
-### Challenge Input
+### Hint
+
+You can use the following code to check your answer:
 
 ```
-100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+#include <Kokkos_Core.hpp>
+#include <iostream>
+
+using namespace std;
+
+int main() {
+  int n = 10;
+  int i, j, k;
+  double u[n][n][n], u_new[n][n][n], f[n][n][n];
+  double dx = 1.0 / (n - 1);
+  double dy = 1.0 / (n - 1);
+  double dz = 1.0 / (n - 1);
+
+  for (i = 0; i < n; i++) {
+    for (j = 0; j < n; j++) {
+      for (k = 0; k < n; k++) {
+        u[i][j][k] = 0.0;
+        u_new[i][j][k] = 0.0;
+        f[i][j][k] = 0.0;
+      }
+    }
+  }
+
+  for (i = 1; i < n-1; i++) {
+    for (j = 1; j < n-1; j++) {
+      for (k = 1; k < n-1; k++) {
+        u_new [i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
+      }
+    }
+  }
+
+  cout << "u_new[0][0][0] = " << u_new[0][
 
 ## Index 43
 
@@ -3780,11 +3807,11 @@ Yes, you can parallelize this code using Kokkos.
 
 ### Input Format
 
-A single line containing the question.
+The input consists of a single line containing the question.
 
 ### Output Format
 
-A single line containing the answer.
+The output consists of a single line containing the answer.
 
 ### Sample Input
 
@@ -3847,6 +3874,6 @@ for (i = 0; i < SIZE; i+=FILTER_SIZE) {
 
 ### Challenge Output
 
-Yes, you can parallelize this code using
+Yes
 
 

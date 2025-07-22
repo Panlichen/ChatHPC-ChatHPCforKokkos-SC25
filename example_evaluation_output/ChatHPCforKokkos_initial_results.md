@@ -44,6 +44,7 @@ Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const
   update = x(i) * y(i);
 }, Kokkos::Sum<float>(sum));
 
+
 ## Index 2
 
 ### Context
@@ -125,7 +126,7 @@ for (i = 0; i < n; i++) {
 
 ### Response
 
-Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("spmv", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = 0.0;
   for (int j = row(i); j < row(i + 1); ++j) {
     y(i) += val(j) * x(col(j));
@@ -150,8 +151,8 @@ for (i = 1; i < n-1; i++) {
 
 ### Response
 
-Kokkos::parallel_for("stencil", Kokkos::RangePolicy(1, n-1), KOKKOS_LAMBDA(const int i) {
-  u_new(i) = 0.5 * (u(i-1) + u(i+1)) - u(i);
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  u_new(i) = 0.5 * (u[i-1] + u[i+1]) - u[i]
 });
 
 ## Index 6
@@ -196,10 +197,10 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
-  float sum = x(i) + y(i);
+Kokkos::parallel_for("swap", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
+  float tmp = x(i);
+  y(i) = x(i);
   x(i) = y(i);
-  y(i) = sum;
 });
 
 ## Index 8
@@ -224,6 +225,7 @@ Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const
   update = x(i) * x(i);
 }, Kokkos::Sum<float>(sum));
 
+
 ## Index 9
 
 ### Context
@@ -242,7 +244,7 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_for("saxpy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("copy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = x(i);
 });
 
@@ -264,9 +266,10 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_reduce("sum_absolute_value", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
-  update = std::abs(x(i));
+Kokkos::parallel_reduce("reduction", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
+  update = abs(x(i));
 }, Kokkos::Sum<float>(sum));
+
 
 ## Index 11
 
@@ -288,9 +291,10 @@ for (int col = 0; col < num_cols; ++col) {
 
 ### Response
 
-Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
-  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
-    y(row_ind(i)) += values(i) * x(col);
+Kokkos::parallel_for("spmv", range_policy(0, num_cols), KOKKOS_LAMBDA(const int i) {
+  y(i) = 0.0;
+  for (int j = col_ptr(i); j < col_ptr(i + 1); ++j) {
+    y(row_ind(j)) += values(j) * x(i);
   }
 });
 
@@ -312,8 +316,11 @@ for (int i = 0; i < non_zeros; i++) {
 
 ### Response
 
-Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, non_zeros), KOKKOS_LAMBDA(const int i) {
-  y(row_ind(i)) += values(i) * x(col_ind(i));
+Kokkos::parallel_for("spmv", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = 0.0;
+  for (int j = row_ind(i); j < row_ind(i + 1); ++j) {
+    y(row_ind(j)) += values(j) * x(col_ind(j));
+  }
 });
 
 ## Index 13
@@ -336,8 +343,8 @@ for (i = 1; i < n-1; i++) {
 
 ### Response
 
-Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
-  u_new(i,j) = (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j)) * 0.25;
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i, int j) {
+  u_new(i, j) = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j]);
 });
 
 ## Index 14
@@ -362,8 +369,8 @@ for (i = 1; i < n-1; i++) {
 
 ### Response
 
-Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
-  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i, const int j) {
+  u_new(i,j) = 0.125 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy);
 });
 
 ## Index 15
@@ -394,12 +401,18 @@ for (i = 0; i < SIZE; ++i) {
 
 ### Response
 
-Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
-  float sum = 0.0f;
-  for (int l = 0; l < l_dim; l++) {
-    sum += a(i,l) * b(l,j);
+Kokkos::parallel_for("conv2d", Kokkos::RangePolicy<>(0, nRows), KOKKOS_LAMBDA(const int i) {
+  for (int j = 0; j < nCols; j++) {
+    float sum = 0.0f;
+    for (int fi = 0; fi < filterRows; fi++) {
+      for (int fj = 0; fj < filterCols; fj++) {
+        if (i + fi >= 0 && i + fi < nRows && j + fj >= 0 && j + fj < nCols) {
+          sum += input(i + fi, j + fj) * filter(fi, fj);
+        }
+      }
+    }
+    output(i, j) = sum;
   }
-  c(i, j) = sum;
 });
 
 ## Index 16
@@ -426,12 +439,10 @@ for (i = 0; i < SIZE; i+=FILTER_SIZE) {
 
 ### Response
 
-Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
-  float sum = 0.0;
-  for (int l = 0; l < lda; l++) {
-    sum += a(i,l) * b(l,j);
+Kokkos::parallel_for("filter", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  for (int j = 0; j < n; j++) {
+    image(i,j) *= filter(fi,fj);
   }
-  c(i, j) = alpha * sum + beta * c(i, j);
 });
 
 ## Index 17
@@ -571,7 +582,7 @@ __global__ void spmv(int n, int nnz, const float *val, const int *row, const int
 
 ### Response
 
-Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("spmv", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = 0.0;
   for (int j = row(i); j < row(i + 1); ++j) {
     y(i) += val(j) * x(col(j));
@@ -598,8 +609,8 @@ __global__ void stencil (int n, const float *u, float *u_new) {
 
 ### Response
 
-Kokkos::parallel_for("stencil", Kokkos::RangePolicy(1, n-1), KOKKOS_LAMBDA(const int i) {
-  u_new(i) = 0.5 * (u(i-1) + u(i+1)) - u(i);
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  u_new(i) = 0.5 * (u[i-1] + u[i+1]) - u[i]
 });
 
 ## Index 23
@@ -622,7 +633,7 @@ __global__ void scal (int n, float a, float *x, float *y) {
 
 ### Response
 
-Kokkos::parallel_for("scal", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("scal", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = a * x(i);
 });
 
@@ -648,10 +659,10 @@ __global__ void swap (int n, float *x, float *y) {
 
 ### Response
 
-Kokkos::parallel_for("swap", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
-  float temp = x(i);
+Kokkos::parallel_for("swap", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
+  float tmp = x(i);
   x(i) = y(i);
-  y(i) = temp;
+  y(i) = tmp;
 });
 
 ## Index 25
@@ -700,7 +711,7 @@ __global__ void copy (int n, float *x, float *y) {
 
 ### Response
 
-Kokkos::parallel_for("copy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("copy", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = x(i);
 });
 
@@ -727,7 +738,7 @@ __global__ void asum (int n, float *x, float *sum) {
 ### Response
 
 Kokkos::parallel_reduce("asum", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
-  update = std::abs(x(i));
+  update = x(i) > 0.0 ? x(i) : -x(i);
 }, Kokkos::Sum<float>(sum));
 
 ## Index 28
@@ -752,10 +763,8 @@ __global__ void spmv_csc (int num_cols, int* col_ptr, int* row_index, float *x, 
 
 ### Response
 
-Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
-  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
-    y(row_ind(i)) += values(i) * x(col);
-  }
+Kokkos::parallel_for("spmv_csc", range_policy(0, num_cols), KOKKOS_LAMBDA(const int i) {
+  y(row_index(i)) += values(i) * x(col);
 });
 
 ## Index 29
@@ -778,8 +787,8 @@ __global__ void spmv_coo (int numzeros, int* col_ind, int* row_ind, float *x, fl
 
 ### Response
 
-Kokkos::parallel_for("spmv_coo", Kokkos::RangePolicy(0, num_nonzeros), KOKKOS_LAMBDA(const int i) {
-  y(row_ind(i)) += values(i) * x(col_ind(i));
+Kokkos::parallel_for("spmv_coo", range_policy(0, nonzeros), KOKKOS_LAMBDA(const int i) {
+  y(row_ind(i)) += values(i) * x(col_ind(i))
 });
 
 ## Index 30
@@ -803,8 +812,9 @@ __global__ void stencil_2d (int n, float dx, float dy, float *u, float *u_new, f
 
 ### Response
 
-Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
-  u_new(i,j) = (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j)) * dx * dy * 0.25;
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  int j = threadIdx.y;
+  u_new(i,j) = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j] * dx * dy);
 });
 
 ## Index 31
@@ -829,8 +839,8 @@ __global__ void stencil_3d (int n, float dx, float dy, float dz, float *u, float
 
 ### Response
 
-Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
-  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+Kokkos::parallel_for("stencil", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {n-1, n-1, n-1}), KOKKOS_LAMBDA (const int i, const int j, const int k) {
+  u_new(i, j, k) = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
 });
 
 ## Index 32
@@ -860,12 +870,14 @@ __global__ void conv (int SIZE, int FILTER_SIZE, float *filter, float *input, fl
 
 ### Response
 
-Kokkos::parallel_for("conv", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n - f_n + 1, n - f_n + 1}), KOKKOS_LAMBDA(const int i, const int j) {
+Kokkos::parallel_for("conv", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
   float sum = 0.0f;
-  for (int fi = 0; fi < f_n; fi++) {
-    for (int fj = 0; fj < f_n; fj++) {
-      if (i + fi >= 0 && j + fj >= 0 && i + fi < n && j + fj < n) {
-        sum += filter(fi, fj) * input(i + fi, j + fj);
+  for (int fi = 0; fi < fsize; fi++) {
+    for (int fj = 0; fj < fsize; fj++) {
+      int ii = i + fi;
+      int jj = j + fj;
+      if (ii >= 0 && ii < n && jj >= 0 && jj < n) {
+        sum += filter(fi, fj) * input(ii, jj);
       }
     }
   }
@@ -897,16 +909,16 @@ __global__ void spectral (int SIZE, int FILTER_SIZE, float *filter, float *input
 
 ### Response
 
-Kokkos::parallel_for("spectral", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n - filter_size, n - filter_size}), KOKKOS_LAMBDA(const int i, const int j) {
+Kokkos::parallel_for("spectral", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
   float sum = 0.0f;
   for (int fi = 0; fi < filter_size; fi++) {
     for (int fj = 0; fj < filter_size; fj++) {
-      if (i + fi >= 0 && j + fj >= 0 && i + fi < n && j + fj < n) {
-        sum += filter(fi, fj) * image(i + fi, j + fj);
+      if (i + fi >= 0 && i + fi < n && j + fj >= 0 && j + fj < n) {
+        sum += input(i + fi, j + fj) * filter(fi, fj);
       }
     }
   }
-  image(i, j) = sum;
+  output(i, j) = sum;
 });
 
 ## Index 34
@@ -949,12 +961,10 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
-  float sum = 0.0;
-  for (int j = 0; j < n; j++) {
-    sum += A(i,j) * x(j);
-  }
-  y(i) = sum;
+Kokkos::parallel_for("swap", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  float tmp = x(i);
+  x(i) = y(i);
+  y(i) = tmp;
 });
 
 ## Index 36
@@ -978,6 +988,7 @@ Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const
   update = x(i) * x(i);
 }, Kokkos::Sum<float>(sum));
 
+
 ## Index 37
 
 ### Context
@@ -995,7 +1006,7 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_for("saxpy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("copy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = x(i);
 });
 
@@ -1016,9 +1027,10 @@ for (i = 0, i < n, i++) {
 
 ### Response
 
-Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
-  update = std::abs(x(i));
+Kokkos::parallel_reduce("sdc", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
+  update = abs(x(i));
 }, Kokkos::Sum<float>(sum));
+
 
 ## Index 39
 
@@ -1039,10 +1051,12 @@ for (int col = 0; col < num_cols; ++col) {
 
 ### Response
 
-Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
-  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
-    y(row_ind(i)) += values(i) * x(col);
+Kokkos::parallel_for("spmv", range_policy(0, num_cols), KOKKOS_LAMBDA(const int i) {
+  float sum = 0.0;
+  for (int j = col_ptr[i]; j < col_ptr[i + 1]; ++j) {
+    sum += values[j] * x(row_ind[j]);
   }
+  y(i) = sum;
 });
 
 ## Index 40
@@ -1062,12 +1076,12 @@ for (int i = 0; i < nonzeros; i++) {
 
 ### Response
 
-Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+Kokkos::parallel_for("spmv", range_policy(0, n), KOKKOS_LAMBDA(const int i) {
   y(i) = 0.0;
-}, Kokkos::Sum<float>(k));
-for (int i = 0; i < nonzeros; i++) {
-  y(row_ind[i]) += values[i] * x(col_ind[i]);
-}
+  for (int j = row_ind(i); j < row_ind(i + 1); ++j) {
+    y(i) += values(j) * x(col_ind(j));
+  }
+});
 
 ## Index 41
 
@@ -1088,8 +1102,8 @@ for (i = 1; i < n-1; i++) {
 
 ### Response
 
-Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
-  u_new(i,j) = 0.25 * (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j) * dx * dy);
+Kokkos::parallel_for("stencil", range_policy(1, n-1), KOKKOS_LAMBDA(const int i, int j) {
+  u_new(i,j) = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j] * dx * dy);
 });
 
 ## Index 42
@@ -1113,8 +1127,8 @@ for (i = 1; i < n-1; i++) {
 
 ### Response
 
-Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
-  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+Kokkos::parallel_for("stencil", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-2, n-2, n-2}), KOKKOS_LAMBDA (const int i, const int j, const int k) {
+  u_new(i,j,k) = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
 });
 
 ## Index 43
@@ -1144,12 +1158,16 @@ for (i = 0; i < SIZE; ++i) {
 
 ### Response
 
-Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
+Kokkos::parallel_for("conv2d", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, n}), KOKKOS_LAMBDA (const int i, const int j) {
   float sum = 0.0f;
-  for (int l = 0; l < l_dim; l++) {
-    sum += a(i,l) * b(l,j);
+  for (int fi = 0; fi < fsize; fi++) {
+    for (int fj = 0; fj < fsize; fj++) {
+      if (i + fi >= 0 && i + fi < n && j + fj >= 0 && j + fj < n) {
+        sum += input(i + fi, j + fj) * filter(fi, fj);
+      }
+    }
   }
-  c(i, j) = sum;
+  output(i, j) = sum;
 });
 
 ## Index 44
@@ -1175,12 +1193,20 @@ for (i = 0; i < SIZE; i+=FILTER_SIZE) {
 
 ### Response
 
-Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, m}), KOKKOS_LAMBDA (const int i, const int j) {
-  float sum = 0.0;
-  for (int l = 0; l < k; l++) {
-    sum += a(i,l) * b(l,j);
+Kokkos::parallel_for("conv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  for (int j = 0; j < n; j++) {
+    float sum = 0.0f;
+    for (int fi = 0; fi < filter_size; fi++) {
+      for (int fj = 0; fj < filter_size; fj++) {
+        int ii = i - fi;
+        int jj = j - fj;
+        if (ii >= 0 && ii < n && jj >= 0 && jj < n) {
+          sum += image(i,j) * filter(fi, fj);
+        }
+      }
+    }
+    output(i, j) = sum;
   }
-  c(i, j) = sum;
 });
 
 
