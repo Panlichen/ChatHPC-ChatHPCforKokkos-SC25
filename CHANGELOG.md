@@ -26,6 +26,7 @@ With this method, the version is YEAR.MONTH.RELEASE. To increment this version, 
 ### Changed
 
 - Updated ChatHPC app to version 25.7.1.
+- Updated naming convention for the ChatHPC for Kokkos Assistant.
 
 ## [0.0.2] - 2025-04-17
 
@@ -35,6 +36,6 @@ Various revisions to get ready for the initial submission.
 
 Initial release of paper artifacts.
 
-[unreleased]: https://github.com/ORNL/ChatHPC-ChatKokkos-SC25/compare/v0.0.2...HEAD
-[0.0.2]: https://github.com/ORNL/ChatHPC-ChatKokkos-SC25/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/ORNL/ChatHPC-ChatKokkos-SC25/releases/tag/v0.0.1
+[unreleased]: https://github.com/ORNL/ChatHPC-ChatHPCforKokkos-SC25/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/ORNL/ChatHPC-ChatHPCforKokkos-SC25/compare/v0.0.1...v0.0.2
+[0.0.1]: https://github.com/ORNL/ChatHPC-ChatHPCforKokkos-SC25/releases/tag/v0.0.1

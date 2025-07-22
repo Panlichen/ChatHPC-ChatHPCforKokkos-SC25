@@ -8,11 +8,11 @@ echo cd $SCRIPT_DIR
 cd $SCRIPT_DIR
 
 echo
-echo '*** Training Chatkokkos Initial ***'
+echo '*** Training ChatHPC for Kokkos Initial ***'
 echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json train
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json train
 
 echo
-echo '*** Training Chatkokkos Refinement ***'
+echo '*** Training ChatHPC for Kokkos Refinement ***'
 echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json train
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json train

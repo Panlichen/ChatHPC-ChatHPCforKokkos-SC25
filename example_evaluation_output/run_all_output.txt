@@ -4,7 +4,7 @@ Running 1_setup.sh
 *** Running 1_setup.sh ***
 
 *** Ensure commands are running in correct directory. ***
-cd ~/ChatHPC-ChatKokkos-SC25
+cd ~/ChatHPC-ChatHPCforKokkos-SC25
 
 *** Check for UV ***
 uv is installed.
@@ -93,9 +93,9 @@ Running 2_train.sh
 *** Running 2_train.sh ***
 
 *** Ensure commands are running in correct directory. ***
-cd ~/ChatHPC-ChatKokkos-SC25
+cd ~/ChatHPC-ChatHPCforKokkos-SC25
 
-*** Training Chatkokkos Initial ***
+*** Training ChatHPC for Kokkos Initial ***
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json train
 Setting               Value
 --------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ max_training_tokens   600
 max_response_tokens   600
 prompt_history_file   ~/.chathpc_history
 prompt_template_file  prompt_template.txt
-prompt_template       You are a powerful LLM model for Kokkos called ChatKokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
+prompt_template       You are a powerful LLM model for Kokkos called ChatHPC for Kokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
 
                       You must output the answer the question.
                       {% if context %}
@@ -191,7 +191,7 @@ Merging model...
 Saving merged model...
 Saving README.md...
 
-*** Training Chatkokkos Refinement ***
+*** Training ChatHPC for Kokkos Refinement ***
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json train
 Setting               Value
 --------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ max_training_tokens   600
 max_response_tokens   600
 prompt_history_file   ~/.chathpc_history
 prompt_template_file  prompt_template.txt
-prompt_template       You are a powerful LLM model for Kokkos called ChatKokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
+prompt_template       You are a powerful LLM model for Kokkos called ChatHPC for Kokkos created by ORNL. Your job is to answer questions about the Kokkos programming model. You are given a question and context regarding the Kokkos programming model.
 
                       You must output the answer the question.
                       {% if context %}
@@ -291,13 +291,13 @@ Running 3_verify.sh
 *** Running 3_verify.sh ***
 
 *** Ensure commands are running in correct directory. ***
-cd ~/ChatHPC-ChatKokkos-SC25
+cd ~/ChatHPC-ChatHPCforKokkos-SC25
 
-*** Verifying Chatkokkos Initial ***
+*** Verifying ChatHPC for Kokkos Initial ***
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json verify
 Total mismatches: 0
 
-*** Verifying Chatkokkos Refinement ***
+*** Verifying ChatHPC for Kokkos Refinement ***
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json verify
 Total mismatches: 0
 
@@ -305,21 +305,21 @@ Running 4_evaluate.sh
 *** Running 4_evaluate.sh ***
 
 *** Ensure commands are running in correct directory. ***
-cd ~/ChatHPC-ChatKokkos-SC25
+cd ~/ChatHPC-ChatHPCforKokkos-SC25
 
-*** Evaluating Chatkokkos Initial ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json test --save_results_file evaluation/ChatKokkos_initial_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatKokkos_initial_results.json > evaluation/ChatKokkos_initial_results.md
+*** Evaluating ChatHPC for Kokkos Initial ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json test --save_results_file evaluation/ChatHPCforKokkos_initial_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatHPCforKokkos_initial_results.json > evaluation/ChatHPCforKokkos_initial_results.md
 
-*** Evaluating Chatkokkos Refinement ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json test --save_results_file evaluation/ChatKokkos_refinement_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatKokkos_refinement_results.json > evaluation/ChatKokkos_refinement_results.md
+*** Evaluating ChatHPC for Kokkos Refinement ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json test --save_results_file evaluation/ChatHPCforKokkos_refinement_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatHPCforKokkos_refinement_results.json > evaluation/ChatHPCforKokkos_refinement_results.md
 
 Running 5_evaluate_baseline.sh
 *** Running 5_evaluate_baseline.sh ***
 
 *** Ensure commands are running in correct directory. ***
-cd ~/ChatHPC-ChatKokkos-SC25
+cd ~/ChatHPC-ChatHPCforKokkos-SC25
 
 *** Evaluate code-llama base model ***
 uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
