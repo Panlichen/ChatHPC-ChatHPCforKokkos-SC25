@@ -23,6 +23,24 @@ With this method, the version is YEAR.MONTH.RELEASE. To increment this version, 
 
 ## [Unreleased]
 
+## [25.7.1] - 2025-07-22
+
+### Fixed
+
+- Fixed multiple missed renames in examples.
+
+## [25.7.0] - 2025-07-22
+
+### Added
+
+- OpenAI API: Added the ability to set a custom base URL for the API endpoint using the `OPENAI_API_BASE_URL` environment variable.
+- Auto Export Markdown: Added the ability to automatically export output files to markdown using the `auto_export_markdown` configuration option.
+- CLI: Look for and use "config.json" in the current directory, if the config option is not set.
+
+### Fixed
+
+- When converting data to markdown, map all keywords to lowercase. This fixes behavior issues when uppercase keywords are used.
+
 ## [25.4.1] - 2025-04-15
 
 ### Fixed
@@ -122,9 +140,11 @@ Verified initial working version of the ChatHPC App.
 
 ### Added
 
-- Initial version of ChatHPC App. Created from the working ChatKokkos Example.
+- Initial version of ChatHPC App. Created from the working ChatHPC for Kokkos Example.
 
-[unreleased]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.4.1...main
+[unreleased]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.7.1...main
+[25.7.1]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.7.0...v25.7.1
+[25.7.0]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.4.1...v25.7.0
 [25.4.1]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.4.0...v25.4.1
 [25.4.0]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.3.0...v25.4.0
 [25.3.0]: https://code.ornl.gov/ChatHPC/ChatHPC-app/-/compare/v25.2.1...v25.3.0

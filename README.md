@@ -4,13 +4,13 @@
 
 This repository holds the artifacts for the ChatHPC SC'25 submission. Contained in this repo is the ChatHPC Library and corresponding CLI application and the Kokkos training and verification datasets used to train and validate ChatKokkos.
 
-See [ChatHPC App README](C1_ChatHPC_Lib/ChatHPC-app-v25.4.1/README.md) for more details on how to use the ChatHPC Library CLI Application.
+See [ChatHPC App README](C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/README.md) for more details on how to use the ChatHPC Library CLI Application.
 
 ## Dependencies
 
 ### Software
 
-This repository's scripts depend on [uv](https://docs.astral.sh/uv/) to build the python virtual environment and to run the software with all the correct dependencies installed. A full list of the dependencies can be found in the `C1_ChatHPC_Lib/ChatHPC-app-v25.4.1/pyproject.toml` file. Please install uv, using the standard instructions, [installing uv](https://docs.astral.sh/uv/getting-started/installation/). This repository was developed on an Ubuntu 22.04.5 LTS system and should work on any modern Linux system.
+This repository's scripts depend on [uv](https://docs.astral.sh/uv/) to build the python virtual environment and to run the software with all the correct dependencies installed. A full list of the dependencies can be found in the `C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/pyproject.toml` file. Please install uv, using the standard instructions, [installing uv](https://docs.astral.sh/uv/getting-started/installation/). This repository was developed on an Ubuntu 22.04.5 LTS system and should work on any modern Linux system.
 
 ### Hardware
 
@@ -27,7 +27,7 @@ ChatHPC-ChatKokkos-SC25
 ├── 5_evaluate_baseline.sh — Test baseline models on validation data.
 ├── basemodels — Location for base models.
 ├── C1_ChatHPC_Lib — ChatHPC Library contribution artifact.
-│   └── ChatHPC-app-v25.4.1 — Copy of ChatHPC-app at version 25.4.1
+│   └── ChatHPC-app-v25.7.1 — Copy of ChatHPC-app at version 25.7.1
 ├── C2_Kokkos_Dataset — Kokkos data contribution artifact.
 │   ├── kokkos_create_context_initial.json — Dataset for training the initial  model.
 │   ├── kokkos_create_context_refinement.json — Dataset for training the refined model.

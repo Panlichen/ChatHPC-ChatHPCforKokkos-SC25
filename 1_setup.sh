@@ -19,8 +19,8 @@ else
 fi
 echo
 echo '*** Test running ChatHPC CLI command. ***'
-echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc -h
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc -h
+echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
 
 echo
 echo '*** Check for base model weights... ***'

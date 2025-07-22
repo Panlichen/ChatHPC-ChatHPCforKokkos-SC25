@@ -23,6 +23,10 @@ With this method, the version is YEAR.MONTH.RELEASE. To increment this version, 
 
 ## [Unreleased]
 
+### Changed
+
+- Updated ChatHPC app to version 25.7.1.
+
 ## [0.0.2] - 2025-04-17
 
 Various revisions to get ready for the initial submission.

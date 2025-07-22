@@ -10,7 +10,7 @@ cd ~/ChatHPC-ChatKokkos-SC25
 uv is installed.
 
 *** Test running ChatHPC CLI command. ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc -h
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
 usage: chathpc [-h] [--debug] [--log_level LOG_LEVEL] [--config CONFIG]
                [--extract] [--no-extract] [--data_file Path]
                [--base_model_path Path] [--finetuned_model_path Path]
@@ -96,7 +96,7 @@ Running 2_train.sh
 cd ~/ChatHPC-ChatKokkos-SC25
 
 *** Training Chatkokkos Initial ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_initial.json train
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json train
 Setting               Value
 --------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 data_file             C2_Kokkos_Dataset/kokkos_create_context_initial.json
@@ -192,7 +192,7 @@ Saving merged model...
 Saving README.md...
 
 *** Training Chatkokkos Refinement ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_refinement.json train
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json train
 Setting               Value
 --------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 data_file             C2_Kokkos_Dataset/kokkos_create_context_refinement.json
@@ -294,11 +294,11 @@ Running 3_verify.sh
 cd ~/ChatHPC-ChatKokkos-SC25
 
 *** Verifying Chatkokkos Initial ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_initial.json verify
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json verify
 Total mismatches: 0
 
 *** Verifying Chatkokkos Refinement ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_refinement.json verify
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json verify
 Total mismatches: 0
 
 Running 4_evaluate.sh
@@ -308,12 +308,12 @@ Running 4_evaluate.sh
 cd ~/ChatHPC-ChatKokkos-SC25
 
 *** Evaluating Chatkokkos Initial ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_initial.json test --save_results_file evaluation/ChatKokkos_initial_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc-data-to-md evaluation/ChatKokkos_initial_results.json > evaluation/ChatKokkos_initial_results.md
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json test --save_results_file evaluation/ChatKokkos_initial_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatKokkos_initial_results.json > evaluation/ChatKokkos_initial_results.md
 
 *** Evaluating Chatkokkos Refinement ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_refinement.json test --save_results_file evaluation/ChatKokkos_refinement_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc-data-to-md evaluation/ChatKokkos_refinement_results.json > evaluation/ChatKokkos_refinement_results.md
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json test --save_results_file evaluation/ChatKokkos_refinement_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatKokkos_refinement_results.json > evaluation/ChatKokkos_refinement_results.md
 
 Running 5_evaluate_baseline.sh
 *** Running 5_evaluate_baseline.sh ***
@@ -322,8 +322,8 @@ Running 5_evaluate_baseline.sh
 cd ~/ChatHPC-ChatKokkos-SC25
 
 *** Evaluate code-llama base model ***
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.4.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md
 
 *** Evaluate OpenAI gpt-4o base model ***
 Error: OPENAI_API_KEY is not set.
