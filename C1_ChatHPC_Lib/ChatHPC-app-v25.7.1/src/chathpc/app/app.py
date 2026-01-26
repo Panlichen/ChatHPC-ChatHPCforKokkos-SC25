@@ -905,13 +905,13 @@ class App:
         print("Saving Model...")
         trainer.model.save_pretrained(self.config.finetuned_model_path)  # type: ignore
         self.save_readme(self.config.finetuned_model_path)
-        print("Merging model...")
-        self.model = trainer.model.merge_and_unload()  # type: ignore
-        print("Saving merged model...")
-        self.tokenizer.save_pretrained(self.config.merged_model_path)
-        self.model.save_pretrained(self.config.merged_model_path)
-        print("Saving README.md...")
-        self.save_readme(self.config.merged_model_path)
+        # print("Merging model...")
+        # self.model = trainer.model.merge_and_unload()  # type: ignore
+        # print("Saving merged model...")
+        # self.tokenizer.save_pretrained(self.config.merged_model_path)
+        # self.model.save_pretrained(self.config.merged_model_path)
+        # print("Saving README.md...")
+        # self.save_readme(self.config.merged_model_path)
 
     def interactive(self, args, prompt="chathpc") -> None:
         """Start an interactive chat session with the model.

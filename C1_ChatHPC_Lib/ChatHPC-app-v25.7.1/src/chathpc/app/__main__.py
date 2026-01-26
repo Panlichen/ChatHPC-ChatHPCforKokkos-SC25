@@ -56,13 +56,13 @@ def run(args, config):
 def verify(args, config):
     app = App(config)
     app.load_datasets()
-    app.load_merged_model()
+    app.load_finetuned_model()
     app.verify(args.save_results_file)
 
 
 def test(args, config):
     app = App(config)
-    app.load_merged_model()
+    app.load_finetuned_model()
     app.test(test_dataset=args.test_json_path, save_test_data_path=args.save_results_file)
 
 
