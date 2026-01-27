@@ -1,0 +1,102 @@
+*** Running 1_setup.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Check for UV ***
+uv is installed.
+
+*** Test running ChatHPC CLI command. ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
+usage: chathpc [-h] [--debug] [--log_level LOG_LEVEL] [--config CONFIG]
+               [--extract] [--no-extract] [--data_file Path]
+               [--base_model_path Path] [--finetuned_model_path Path]
+               [--merged_model_path Path] [--training_output_dir Path]
+               [--max_training_tokens int] [--max_response_tokens int]
+               [--prompt_history_file Path]
+               [--prompt_template_file {Path,null}]
+               [--prompt_template {str,null}] [--auto_export_markdown bool]
+               [--use_wandb bool]
+               {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai}
+               ...
+
+ChatHPC Application. Used to train and interact with ChatX applications which
+are part of ChatHPC.
+
+options:
+  -h, --help            show this help message and exit
+  --debug               Open debug port (5678).
+  --log_level LOG_LEVEL
+                        Log level.
+  --config CONFIG       Path to config json file.
+  --extract             Extract the answer from the response.
+  --no-extract          Show the response without extracting the answer.
+  --data_file Path      Path to the JSON file containing training data for
+                        model fine-tuning. (required)
+  --base_model_path Path
+                        Path to the pre-trained base LLM model directory.
+                        (default: /auto/projects/ChatHPC/models/cache/meta-
+                        llama/CodeLlama-7b-hf)
+  --finetuned_model_path Path
+                        Path where fine-tuned model layers will be saved.
+                        (default: peft_adapter)
+  --merged_model_path Path
+                        Path where the complete merged model will be saved.
+                        (default: merged_adapters)
+  --training_output_dir Path
+                        Path where training output will be saved. (default:
+                        training_checkpoints)
+  --max_training_tokens int
+                        Maximum number of tokens to use to tokenize the
+                        training sets. (default: 512)
+  --max_response_tokens int
+                        Maximum number of tokens to generate in model
+                        responses. (default: 600)
+  --prompt_history_file Path
+                        Path to the file containing interactive prompt
+                        history. (default: ~/.chathpc_history)
+  --prompt_template_file {Path,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --prompt_template {str,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --auto_export_markdown bool
+                        Auto export output files to markdown. (default: False)
+  --use_wandb bool      Whether to use Weights & Biases for logging. (default:
+                        False)
+
+subcommands:
+  valid subcommands
+
+  {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai}
+    config              Print current config
+    train               Finetune the model
+    run                 Interact with the model
+    run_base            Interact with the base model
+    run_fine            Interact with the finetuned model
+    run_merged          Interact with the merged model
+    verify              Verify the trained model with the training dataset
+    test                Test the trained model with a testing dataset
+    base                base subcommands
+    ollama              Ollama subcommands
+    openai              OpenAI subcommands
+
+*** Check for base model weights... ***
+CodeLlama-7b-hf base model found
+*** Running 4_evaluate.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Evaluating ChatHPC for Kokkos Initial ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json test --save_results_file evaluation/ChatHPCforKokkos_initial_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:07<00:07,  7.67s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:10<00:00,  4.92s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:10<00:00,  5.34s/it]
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:02<01:49,  2.49s/it]Test:   4%|▍         | 2/45 [00:04<01:33,  2.17s/it]Test:   7%|▋         | 3/45 [00:07<01:41,  2.42s/it]Test:   9%|▉         | 4/45 [00:10<01:58,  2.89s/it]Test:  11%|█         | 5/45 [00:13<01:51,  2.78s/it]Test:  13%|█▎        | 6/45 [00:15<01:37,  2.51s/it]Test:  16%|█▌        | 7/45 [00:16<01:23,  2.20s/it]Test:  18%|█▊        | 8/45 [00:18<01:18,  2.11s/it]Test:  20%|██        | 9/45 [00:20<01:14,  2.06s/it]Test:  22%|██▏       | 10/45 [00:22<01:05,  1.87s/it]Test:  24%|██▍       | 11/45 [00:23<01:02,  1.84s/it]Test:  27%|██▋       | 12/45 [00:26<01:10,  2.13s/it]Test:  29%|██▉       | 13/45 [00:29<01:14,  2.34s/it]Test:  31%|███       | 14/45 [00:32<01:16,  2.48s/it]Test:  33%|███▎      | 15/45 [00:35<01:23,  2.79s/it]Test:  36%|███▌      | 16/45 [00:40<01:40,  3.48s/it]Test:  38%|███▊      | 17/45 [00:44<01:35,  3.43s/it]Test:  40%|████      | 18/45 [00:45<01:18,  2.90s/it]Test:  42%|████▏     | 19/45 [00:47<01:07,  2.61s/it]Test:  44%|████▍     | 20/45 [00:50<01:05,  2.63s/it]Test:  47%|████▋     | 21/45 [00:54<01:10,  2.92s/it]Test:  49%|████▉     | 22/45 [00:56<01:04,  2.82s/it]Test:  51%|█████     | 23/45 [00:58<00:56,  2.57s/it]Test:  53%|█████▎    | 24/45 [01:00<00:46,  2.21s/it]Test:  56%|█████▌    | 25/45 [01:01<00:41,  2.08s/it]Test:  58%|█████▊    | 26/45 [01:03<00:38,  2.04s/it]Test:  60%|██████    | 27/45 [01:05<00:32,  1.82s/it]Test:  62%|██████▏   | 28/45 [01:07<00:32,  1.94s/it]Test:  64%|██████▍   | 29/45 [01:09<00:29,  1.87s/it]Test:  67%|██████▋   | 30/45 [01:10<00:27,  1.86s/it]Test:  69%|██████▉   | 31/45 [01:14<00:32,  2.32s/it]Test:  71%|███████   | 32/45 [01:19<00:40,  3.09s/it]Test:  73%|███████▎  | 33/45 [01:24<00:45,  3.79s/it]Test:  76%|███████▌  | 34/45 [01:29<00:46,  4.25s/it]Test:  78%|███████▊  | 35/45 [01:31<00:34,  3.44s/it]Test:  80%|████████  | 36/45 [01:33<00:26,  2.98s/it]Test:  82%|████████▏ | 37/45 [01:35<00:21,  2.67s/it]Test:  84%|████████▍ | 38/45 [01:36<00:16,  2.30s/it]Test:  87%|████████▋ | 39/45 [01:38<00:13,  2.19s/it]Test:  89%|████████▉ | 40/45 [01:41<00:11,  2.39s/it]Test:  91%|█████████ | 41/45 [01:44<00:09,  2.49s/it]Test:  93%|█████████▎| 42/45 [01:47<00:08,  2.76s/it]Test:  96%|█████████▌| 43/45 [01:52<00:06,  3.39s/it]Test:  98%|█████████▊| 44/45 [01:57<00:03,  3.90s/it]Test: 100%|██████████| 45/45 [02:00<00:00,  3.73s/it]Test: 100%|██████████| 45/45 [02:00<00:00,  2.69s/it]
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatHPCforKokkos_initial_results.json > evaluation/ChatHPCforKokkos_initial_results.md
+
+*** Evaluating ChatHPC for Kokkos Refinement ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_refinement.json test --save_results_file evaluation/ChatHPCforKokkos_refinement_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:03<00:03,  3.42s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:05<00:00,  2.46s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:05<00:00,  2.61s/it]
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:02<01:29,  2.04s/it]Test:   4%|▍         | 2/45 [00:03<01:22,  1.93s/it]Test:   7%|▋         | 3/45 [00:06<01:33,  2.22s/it]Test:   9%|▉         | 4/45 [00:09<01:51,  2.73s/it]Test:  11%|█         | 5/45 [00:12<01:46,  2.67s/it]Test:  13%|█▎        | 6/45 [00:14<01:35,  2.44s/it]Test:  16%|█▌        | 7/45 [00:16<01:21,  2.14s/it]Test:  18%|█▊        | 8/45 [00:18<01:17,  2.11s/it]Test:  20%|██        | 9/45 [00:19<01:13,  2.03s/it]Test:  22%|██▏       | 10/45 [00:21<01:04,  1.85s/it]Test:  24%|██▍       | 11/45 [00:23<01:02,  1.85s/it]Test:  27%|██▋       | 12/45 [00:25<01:08,  2.07s/it]Test:  29%|██▉       | 13/45 [00:27<01:03,  1.99s/it]Test:  31%|███       | 14/45 [00:30<01:14,  2.41s/it]Test:  33%|███▎      | 15/45 [00:35<01:33,  3.11s/it]Test:  36%|███▌      | 16/45 [00:40<01:43,  3.56s/it]Test:  38%|███▊      | 17/45 [00:43<01:37,  3.48s/it]Test:  40%|████      | 18/45 [00:45<01:18,  2.92s/it]Test:  42%|████▏     | 19/45 [00:47<01:07,  2.60s/it]Test:  44%|████▍     | 20/45 [00:49<01:04,  2.59s/it]Test:  47%|████▋     | 21/45 [00:53<01:08,  2.85s/it]Test:  49%|████▉     | 22/45 [00:55<01:03,  2.77s/it]Test:  51%|█████     | 23/45 [00:57<00:55,  2.54s/it]Test:  53%|█████▎    | 24/45 [00:59<00:46,  2.21s/it]Test:  56%|█████▌    | 25/45 [01:00<00:42,  2.10s/it]Test:  58%|█████▊    | 26/45 [01:02<00:38,  2.02s/it]Test:  60%|██████    | 27/45 [01:04<00:32,  1.83s/it]Test:  62%|██████▏   | 28/45 [01:06<00:31,  1.83s/it]Test:  64%|██████▍   | 29/45 [01:08<00:32,  2.05s/it]Test:  67%|██████▋   | 30/45 [01:10<00:29,  1.96s/it]Test:  69%|██████▉   | 31/45 [01:13<00:33,  2.41s/it]Test:  71%|███████   | 32/45 [01:18<00:40,  3.11s/it]Test:  73%|███████▎  | 33/45 [01:24<00:45,  3.82s/it]Test:  76%|███████▌  | 34/45 [01:29<00:46,  4.22s/it]Test:  78%|███████▊  | 35/45 [01:30<00:34,  3.40s/it]Test:  80%|████████  | 36/45 [01:32<00:26,  2.94s/it]Test:  82%|████████▏ | 37/45 [01:34<00:20,  2.61s/it]Test:  84%|████████▍ | 38/45 [01:35<00:15,  2.28s/it]Test:  87%|████████▋ | 39/45 [01:37<00:12,  2.14s/it]Test:  89%|████████▉ | 40/45 [01:40<00:11,  2.26s/it]Test:  91%|█████████ | 41/45 [01:41<00:08,  2.11s/it]Test:  93%|█████████▎| 42/45 [01:45<00:07,  2.52s/it]Test:  96%|█████████▌| 43/45 [01:50<00:06,  3.18s/it]Test:  98%|█████████▊| 44/45 [01:54<00:03,  3.61s/it]Test: 100%|██████████| 45/45 [01:58<00:00,  3.57s/it]Test: 100%|██████████| 45/45 [01:58<00:00,  2.63s/it]
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/ChatHPCforKokkos_refinement_results.json > evaluation/ChatHPCforKokkos_refinement_results.md
