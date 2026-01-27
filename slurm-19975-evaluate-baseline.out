@@ -1,0 +1,116 @@
+*** Running 1_setup.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Check for UV ***
+uv is installed.
+
+*** Test running ChatHPC CLI command. ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
+usage: chathpc [-h] [--debug] [--log_level LOG_LEVEL] [--config CONFIG]
+               [--extract] [--no-extract] [--data_file Path]
+               [--base_model_path Path] [--finetuned_model_path Path]
+               [--merged_model_path Path] [--training_output_dir Path]
+               [--max_training_tokens int] [--max_response_tokens int]
+               [--prompt_history_file Path]
+               [--prompt_template_file {Path,null}]
+               [--prompt_template {str,null}] [--auto_export_markdown bool]
+               [--use_wandb bool]
+               {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai,siliconflow}
+               ...
+
+ChatHPC Application. Used to train and interact with ChatX applications which
+are part of ChatHPC.
+
+options:
+  -h, --help            show this help message and exit
+  --debug               Open debug port (5678).
+  --log_level LOG_LEVEL
+                        Log level.
+  --config CONFIG       Path to config json file.
+  --extract             Extract the answer from the response.
+  --no-extract          Show the response without extracting the answer.
+  --data_file Path      Path to the JSON file containing training data for
+                        model fine-tuning. (required)
+  --base_model_path Path
+                        Path to the pre-trained base LLM model directory.
+                        (default: /auto/projects/ChatHPC/models/cache/meta-
+                        llama/CodeLlama-7b-hf)
+  --finetuned_model_path Path
+                        Path where fine-tuned model layers will be saved.
+                        (default: peft_adapter)
+  --merged_model_path Path
+                        Path where the complete merged model will be saved.
+                        (default: merged_adapters)
+  --training_output_dir Path
+                        Path where training output will be saved. (default:
+                        training_checkpoints)
+  --max_training_tokens int
+                        Maximum number of tokens to use to tokenize the
+                        training sets. (default: 512)
+  --max_response_tokens int
+                        Maximum number of tokens to generate in model
+                        responses. (default: 600)
+  --prompt_history_file Path
+                        Path to the file containing interactive prompt
+                        history. (default: ~/.chathpc_history)
+  --prompt_template_file {Path,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --prompt_template {str,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --auto_export_markdown bool
+                        Auto export output files to markdown. (default: False)
+  --use_wandb bool      Whether to use Weights & Biases for logging. (default:
+                        False)
+
+subcommands:
+  valid subcommands
+
+  {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai,siliconflow}
+    config              Print current config
+    train               Finetune the model
+    run                 Interact with the model
+    run_base            Interact with the base model
+    run_fine            Interact with the finetuned model
+    run_merged          Interact with the merged model
+    verify              Verify the trained model with the training dataset
+    test                Test the trained model with a testing dataset
+    base                base subcommands
+    ollama              Ollama subcommands
+    openai              OpenAI subcommands
+    siliconflow         SiliconFlow subcommands
+
+*** Check for base model weights... ***
+CodeLlama-7b-hf base model found
+*** Running 5_evaluate_baseline.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Evaluate code-llama base model ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:03<00:03,  3.10s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:04<00:00,  2.22s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:04<00:00,  2.36s/it]
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:10<07:26, 10.15s/it]Test:   4%|▍         | 2/45 [00:19<07:01,  9.81s/it]Test:   7%|▋         | 3/45 [00:29<06:47,  9.70s/it]Test:   9%|▉         | 4/45 [00:38<06:35,  9.66s/it]Test:  11%|█         | 5/45 [00:48<06:25,  9.63s/it]Test:  13%|█▎        | 6/45 [00:58<06:14,  9.62s/it]Test:  16%|█▌        | 7/45 [01:07<06:05,  9.61s/it]Test:  18%|█▊        | 8/45 [01:17<05:54,  9.59s/it]Test:  20%|██        | 9/45 [01:26<05:44,  9.58s/it]Test:  22%|██▏       | 10/45 [01:36<05:35,  9.58s/it]Test:  24%|██▍       | 11/45 [01:45<05:25,  9.57s/it]Test:  27%|██▋       | 12/45 [01:55<05:15,  9.56s/it]Test:  29%|██▉       | 13/45 [02:04<05:06,  9.56s/it]Test:  31%|███       | 14/45 [02:14<04:56,  9.56s/it]Test:  33%|███▎      | 15/45 [02:24<04:46,  9.57s/it]Test:  36%|███▌      | 16/45 [02:33<04:37,  9.57s/it]Test:  38%|███▊      | 17/45 [02:43<04:28,  9.58s/it]Test:  40%|████      | 18/45 [02:52<04:18,  9.57s/it]Test:  42%|████▏     | 19/45 [03:02<04:08,  9.58s/it]Test:  44%|████▍     | 20/45 [03:12<03:59,  9.58s/it]Test:  47%|████▋     | 21/45 [03:21<03:50,  9.58s/it]Test:  49%|████▉     | 22/45 [03:31<03:40,  9.59s/it]Test:  51%|█████     | 23/45 [03:40<03:30,  9.58s/it]Test:  53%|█████▎    | 24/45 [03:50<03:21,  9.57s/it]Test:  56%|█████▌    | 25/45 [03:59<03:11,  9.57s/it]Test:  58%|█████▊    | 26/45 [04:09<03:01,  9.58s/it]Test:  60%|██████    | 27/45 [04:19<02:52,  9.58s/it]Test:  62%|██████▏   | 28/45 [04:28<02:42,  9.58s/it]Test:  64%|██████▍   | 29/45 [04:38<02:33,  9.58s/it]Test:  67%|██████▋   | 30/45 [04:47<02:23,  9.57s/it]Test:  69%|██████▉   | 31/45 [04:57<02:14,  9.58s/it]Test:  71%|███████   | 32/45 [05:06<02:04,  9.58s/it]Test:  73%|███████▎  | 33/45 [05:16<01:54,  9.58s/it]Test:  76%|███████▌  | 34/45 [05:26<01:45,  9.58s/it]Test:  78%|███████▊  | 35/45 [05:35<01:35,  9.58s/it]Test:  80%|████████  | 36/45 [05:45<01:26,  9.58s/it]Test:  82%|████████▏ | 37/45 [05:54<01:16,  9.58s/it]Test:  84%|████████▍ | 38/45 [06:04<01:07,  9.58s/it]Test:  87%|████████▋ | 39/45 [06:14<00:57,  9.58s/it]Test:  89%|████████▉ | 40/45 [06:23<00:47,  9.57s/it]Test:  91%|█████████ | 41/45 [06:33<00:38,  9.58s/it]Test:  93%|█████████▎| 42/45 [06:42<00:28,  9.58s/it]Test:  96%|█████████▌| 43/45 [06:52<00:19,  9.58s/it]Test:  98%|█████████▊| 44/45 [07:01<00:09,  9.58s/it]Test: 100%|██████████| 45/45 [07:11<00:00,  9.58s/it]Test: 100%|██████████| 45/45 [07:11<00:00,  9.59s/it]
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md
+
+Loading environment variables from .env file
+
+*** Evaluate SiliconFlow model ***
+SILICONFLOW_API_KEY is set.
+Using SiliconFlow model: Pro/deepseek-ai/DeepSeek-V3.2
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model Pro/deepseek-ai/DeepSeek-V3.2 --save_results_file evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:17<12:40, 17.28s/it]Test:   4%|▍         | 2/45 [00:37<13:25, 18.73s/it]Test:   7%|▋         | 3/45 [00:56<13:16, 18.98s/it]Test:   9%|▉         | 4/45 [01:31<17:16, 25.28s/it]Test:  11%|█         | 5/45 [01:47<14:46, 22.16s/it]Test:  13%|█▎        | 6/45 [02:05<13:28, 20.72s/it]Test:  16%|█▌        | 7/45 [02:26<13:12, 20.86s/it]Test:  18%|█▊        | 8/45 [02:43<12:02, 19.53s/it]Test:  20%|██        | 9/45 [02:59<11:07, 18.54s/it]Test:  22%|██▏       | 10/45 [03:13<09:54, 17.00s/it]Test:  24%|██▍       | 11/45 [03:32<09:58, 17.60s/it]Test:  27%|██▋       | 12/45 [04:00<11:24, 20.74s/it]Test:  29%|██▉       | 13/45 [04:15<10:11, 19.11s/it]Test:  31%|███       | 14/45 [04:32<09:26, 18.27s/it]Test:  33%|███▎      | 15/45 [04:49<09:04, 18.15s/it]Test:  36%|███▌      | 16/45 [05:22<10:48, 22.38s/it]Test:  38%|███▊      | 17/45 [06:01<12:52, 27.58s/it]Test:  40%|████      | 18/45 [06:27<12:09, 27.03s/it]Test:  42%|████▏     | 19/45 [07:42<17:54, 41.32s/it]Test:  44%|████▍     | 20/45 [08:44<19:51, 47.68s/it]Test:  47%|████▋     | 21/45 [10:07<23:18, 58.27s/it]Test:  49%|████▉     | 22/45 [10:27<17:55, 46.76s/it]Test:  51%|█████     | 23/45 [10:51<14:34, 39.76s/it]Test:  53%|█████▎    | 24/45 [11:19<12:45, 36.47s/it]Test:  56%|█████▌    | 25/45 [11:52<11:48, 35.43s/it]Test:  58%|█████▊    | 26/45 [13:33<17:25, 55.04s/it]Test:  60%|██████    | 27/45 [13:49<12:57, 43.21s/it]Test:  62%|██████▏   | 28/45 [14:41<13:02, 46.04s/it]Test:  64%|██████▍   | 29/45 [15:08<10:41, 40.09s/it]Test:  67%|██████▋   | 30/45 [15:28<08:34, 34.31s/it]Test:  69%|██████▉   | 31/45 [15:54<07:23, 31.70s/it]2026-01-27 09:47:34.517 | ERROR    | chathpc.app.siliconflow_interface:siliconflow_chat_evaluate:79 - Error calling SiliconFlow API: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=180)
+Test:  71%|███████   | 32/45 [18:55<16:34, 76.48s/it]Test:  73%|███████▎  | 33/45 [19:21<12:15, 61.25s/it]Test:  76%|███████▌  | 34/45 [21:56<16:24, 89.47s/it]Test:  78%|███████▊  | 35/45 [22:09<11:04, 66.49s/it]Test:  80%|████████  | 36/45 [22:22<07:34, 50.48s/it]Test:  82%|████████▏ | 37/45 [22:36<05:15, 39.49s/it]Test:  84%|████████▍ | 38/45 [22:52<03:47, 32.51s/it]Test:  87%|████████▋ | 39/45 [23:09<02:47, 27.96s/it]Test:  89%|████████▉ | 40/45 [24:05<03:01, 36.28s/it]Test:  91%|█████████ | 41/45 [25:05<02:53, 43.46s/it]Test:  93%|█████████▎| 42/45 [25:23<01:47, 35.77s/it]Test:  96%|█████████▌| 43/45 [26:40<01:36, 48.09s/it]Test:  98%|█████████▊| 44/45 [27:07<00:41, 41.80s/it]2026-01-27 09:56:18.791 | ERROR    | chathpc.app.siliconflow_interface:siliconflow_chat_evaluate:79 - Error calling SiliconFlow API: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Max retries exceeded with url: /v1/chat/completions (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+Test: 100%|██████████| 45/45 [27:39<00:00, 38.91s/it]Test: 100%|██████████| 45/45 [27:39<00:00, 36.88s/it]
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.json > evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.md
+Traceback (most recent call last):
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/bin/chathpc-data-to-md", line 10, in <module>
+    sys.exit(cli())
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/json_to_markdown.py", line 93, in cli
+    print(json_yaml_to_markdown(args.json, add_rating_template=args.add_rating_template))
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/json_to_markdown.py", line 55, in json_yaml_to_markdown
+    return "".join(return_str)
+TypeError: sequence item 319: expected str instance, NoneType found
