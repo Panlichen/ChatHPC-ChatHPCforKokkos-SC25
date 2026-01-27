@@ -32,6 +32,7 @@ import chathpc.app
 from chathpc.app.json_to_markdown import json_yaml_to_markdown
 from chathpc.app.ollama_interface import ollama_chat_evaluate
 from chathpc.app.openai_interface import ChatHPCOpenAI
+from chathpc.app.siliconflow_interface import ChatHPCSiliconFlow
 from chathpc.app.utils import template_utils
 from chathpc.app.utils.common_utils import load_json_yaml_arg, run
 from chathpc.app.utils.datastore import save_json, save_md
@@ -982,6 +983,7 @@ class App:
         save_verify_data_path: str | Path | None = None,
         ollama_model: str | None = None,
         openai_model: str | None = None,
+        siliconflow_model: str | None = None,
     ) -> int:
         """Verify model outputs against the training dataset.
 
@@ -992,6 +994,7 @@ class App:
             save_verify_data_path (Union[str, Path, None]): Optional path to save
                 verification results.
             ollama_model (str, optional): Name of Ollama model, if using Ollama instead of app's model
+            siliconflow_model (str, optional): Name of SiliconFlow model, if using SiliconFlow instead of app's model
 
         Returns:
             int: The number of errors.
@@ -1007,8 +1010,13 @@ class App:
 
         if ollama_model is not None and openai_model is not None:
             raise RuntimeError("Both Ollama model and OpenAI model cannot both be set. Only one should be set.")
+        if ollama_model is not None and siliconflow_model is not None:
+            raise RuntimeError("Both Ollama model and SiliconFlow model cannot both be set. Only one should be set.")
+        if openai_model is not None and siliconflow_model is not None:
+            raise RuntimeError("Both OpenAI model and SiliconFlow model cannot both be set. Only one should be set.")
 
         openai_client = ChatHPCOpenAI(self.config) if openai_model is not None else None
+        siliconflow_client = ChatHPCSiliconFlow(self.config) if siliconflow_model is not None else None
 
         for i, item in tqdm(enumerate(self.train_dataset), "Verify", total=len(self.train_dataset)):  # type: ignore
             item_mapped = map_keywords(item)
@@ -1016,6 +1024,8 @@ class App:
                 response = ollama_chat_evaluate(self.config, ollama_model, **item_mapped)
             elif openai_model is not None and openai_client is not None:
                 response = openai_client.openai_chat_evaluate(openai_model, **item_mapped)
+            elif siliconflow_model is not None and siliconflow_client is not None:
+                response = siliconflow_client.siliconflow_chat_evaluate(siliconflow_model, **item_mapped)
             else:
                 response = self.chat_evaluate_extract(**item_mapped)
             prompt = self.chat_prompt(**item_mapped)
@@ -1068,6 +1078,7 @@ class App:
         save_test_data_path: str | Path | None = None,
         ollama_model: str | None = None,
         openai_model: str | None = None,
+        siliconflow_model: str | None = None,
     ) -> list[dict[str, Any]]:
         """Test model against provided testing dataset.
 
@@ -1077,6 +1088,7 @@ class App:
             save_test_data_path (Union[str, Path, None]): Optional path to save
                 test results.
             ollama_model (str, optional): Name of Ollama model, if using Ollama instead of app's model
+            siliconflow_model (str, optional): Name of SiliconFlow model, if using SiliconFlow instead of app's model
 
         Returns:
             int: result of the test.
@@ -1094,8 +1106,13 @@ class App:
 
         if ollama_model is not None and openai_model is not None:
             raise RuntimeError("Both Ollama model and OpenAI model cannot both be set. Only one should be set.")
+        if ollama_model is not None and siliconflow_model is not None:
+            raise RuntimeError("Both Ollama model and SiliconFlow model cannot both be set. Only one should be set.")
+        if openai_model is not None and siliconflow_model is not None:
+            raise RuntimeError("Both OpenAI model and SiliconFlow model cannot both be set. Only one should be set.")
 
         openai_client = ChatHPCOpenAI(self.config) if openai_model is not None else None
+        siliconflow_client = ChatHPCSiliconFlow(self.config) if siliconflow_model is not None else None
 
         test_data = load_json_yaml_arg(test_dataset, False)
         test_data_len = len(test_data)
@@ -1106,6 +1123,8 @@ class App:
                 response = ollama_chat_evaluate(self.config, ollama_model, **item_mapped)
             elif openai_model is not None and openai_client is not None:
                 response = openai_client.openai_chat_evaluate(openai_model, **item_mapped)
+            elif siliconflow_model is not None and siliconflow_client is not None:
+                response = siliconflow_client.siliconflow_chat_evaluate(siliconflow_model, **item_mapped)
             else:
                 response = self.chat_evaluate_extract(**item_mapped)
             prompt = self.chat_prompt(**item_mapped)

@@ -11,6 +11,7 @@ from pydantic_settings import (
 
 from chathpc.app import App, AppConfig
 from chathpc.app.utils.common_utils import load_json_yaml_arg
+from chathpc.app.siliconflow_interface import ChatHPCSiliconFlow
 
 
 def config(_args, config):
@@ -94,6 +95,17 @@ def openai_test(args, config):
     app.test(test_dataset=args.test_json_path, save_test_data_path=args.save_results_file, openai_model=args.model)
 
 
+def siliconflow_verify(args, config):
+    app = App(config)
+    app.load_datasets()
+    app.verify(save_verify_data_path=args.save_results_file, siliconflow_model=args.model)
+
+
+def siliconflow_test(args, config):
+    app = App(config)
+    app.test(test_dataset=args.test_json_path, save_test_data_path=args.save_results_file, siliconflow_model=args.model)
+
+
 def init_parser(parser):
     parser.add_argument("--debug", action="store_true", help="Open debug port (5678).")
     parser.add_argument("--log_level", type=str, help="Log level.")
@@ -169,6 +181,21 @@ def init_parser(parser):
     openai_test_parser.add_argument("--save_results_file", type=str, help="Save verification results here.")
     openai_test_parser.add_argument("--model", type=str, help="Name of the OpenAI model to use.")
     openai_test_parser.add_argument("test_json_path", type=str, help="Path to test json file.")
+
+    siliconflow_parser = subparsers.add_parser("siliconflow", help="SiliconFlow subcommands")
+    siliconflow_subparser = siliconflow_parser.add_subparsers(title="subcommands", description="valid SiliconFlow subcommands")
+    siliconflow_verify_parser = siliconflow_subparser.add_parser(
+        "verify", help="Verify the SiliconFlow model with the training dataset"
+    )
+    siliconflow_verify_parser.set_defaults(func=siliconflow_verify)
+    siliconflow_verify_parser.add_argument("--save_results_file", type=str, help="Save verification results here.")
+    siliconflow_verify_parser.add_argument("--model", type=str, help="Name of the SiliconFlow model to use.")
+
+    siliconflow_test_parser = siliconflow_subparser.add_parser("test", help="Test the SiliconFlow model with the training dataset")
+    siliconflow_test_parser.set_defaults(func=siliconflow_test)
+    siliconflow_test_parser.add_argument("--save_results_file", type=str, help="Save verification results here.")
+    siliconflow_test_parser.add_argument("--model", type=str, help="Name of the SiliconFlow model to use.")
+    siliconflow_test_parser.add_argument("test_json_path", type=str, help="Path to test json file.")
 
 
 def cli(raw_args=None):
