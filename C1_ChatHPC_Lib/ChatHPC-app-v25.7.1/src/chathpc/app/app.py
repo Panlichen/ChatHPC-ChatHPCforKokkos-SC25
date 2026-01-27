@@ -1,7 +1,9 @@
 """App Module: used to construct an app for training ChatHPC LLMs."""
 
+# 从未来版本导入类型注解支持
 from __future__ import annotations
 
+# 导入标准库模块
 import atexit
 import os
 import readline
@@ -11,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+# 导入第三方库
 import jinja2
 import torch
 from loguru import logger
@@ -27,6 +30,7 @@ from tabulate import tabulate
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer, DataCollatorForSeq2Seq, Trainer, TrainingArguments
 
+# 导入ChatHPC相关模块
 import chathpc
 import chathpc.app
 from chathpc.app.json_to_markdown import json_yaml_to_markdown
@@ -39,6 +43,7 @@ from chathpc.app.utils.datastore import save_json, save_md
 from chathpc.app.utils.template_utils import map_keywords
 from chathpc.app.utils.verify_utils import ignore_minor
 
+# 定义默认应用配置文件路径
 DEFAULT_APP_CONFIG_FILE = Path(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "config/default_app_settings.json"))
 )
@@ -82,46 +87,60 @@ class AppConfig(BaseSettings):
         - Either prompt_template_file or prompt_template must be set
     """
 
+    # 训练数据文件路径
     data_file: Path = Field(..., description="Path to the JSON file containing training data for model fine-tuning.")
+    # 基础模型路径
     base_model_path: Path = Field(
         Path("/auto/projects/ChatHPC/models/cache/meta-llama/CodeLlama-7b-hf"),
         description="Path to the pre-trained base LLM model directory.",
     )
+    # 微调模型路径
     finetuned_model_path: Path = Field(
         Path("peft_adapter"), description="Path where fine-tuned model layers will be saved."
     )
+    # 合并模型路径
     merged_model_path: Path = Field(
         Path("merged_adapters"), description="Path where the complete merged model will be saved."
     )
+    # 训练输出目录
     training_output_dir: Path = Field(
         Path("training_checkpoints"), description="Path where training output will be saved."
     )
+    # 最大训练 tokens
     max_training_tokens: int = Field(
         512, gt=0, description="Maximum number of tokens to use to tokenize the training sets."
     )
+    # 最大响应 tokens
     max_response_tokens: int = Field(600, gt=0, description="Maximum number of tokens to generate in model responses.")
+    # 提示历史文件
     prompt_history_file: Path = Field(
         Path("~/.chathpc_history"), description="Path to the file containing interactive prompt history."
     )
+    # 提示模板文件
     prompt_template_file: Path | None = Field(
         None, description="Path to the prompt template to use for training and inference."
     )
+    # 提示模板字符串
     prompt_template: str | None = Field(
         None, description="Path to the prompt template to use for training and inference."
     )
+    # 自动导出为 Markdown
     auto_export_markdown: bool = Field(False, description="Auto export output files to markdown.")
+    # 使用 Weights & Biases
     use_wandb: bool = Field(False, description="Whether to use Weights & Biases for logging.")
 
+    # 模型配置
     model_config = SettingsConfigDict(
         # cli_parse_args=True,
-        env_prefix="CHATHPC_",
-        env_file=".env",
-        env_file_encoding="utf-8",
+        env_prefix="CHATHPC_",  # 环境变量前缀
+        env_file=".env",  # 环境变量文件
+        env_file_encoding="utf-8",  # 环境变量文件编码
         # json_file=DEFAULT_APP_CONFIG_FILE,
-        json_file_encoding="utf-8",
-        extra="allow",
+        json_file_encoding="utf-8",  # JSON文件编码
+        extra="allow",  # 允许额外的配置项
     )
 
+    # 提示模板验证器
     @model_validator(mode="before")
     @classmethod
     def check_for_prompt_template(cls, values):
@@ -148,12 +167,15 @@ class AppConfig(BaseSettings):
             - Both prompt_template and prompt_template_file set
             - Neither prompt_template nor prompt_template_file set
         """
+        # 检查是否设置了提示模板文件或提示模板字符串
         if not (bool(values.get("prompt_template_file")) | bool(values.get("prompt_template"))):
             raise ValueError("Either prompt_template_file or prompt_template must be set.")
+        # 检查是否同时设置了提示模板文件和提示模板字符串
         if bool(values.get("prompt_template_file")) & bool(values.get("prompt_template")):
             raise ValueError("prompt_template_file and prompt_template should not both be set.")
         return values
 
+    # 自定义配置源顺序
     @classmethod
     def settings_customise_sources(
         cls,
@@ -163,6 +185,7 @@ class AppConfig(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # 返回配置源顺序：环境变量 > .env文件 > 初始化参数 > JSON配置文件 > 文件密钥
         return (
             env_settings,
             dotenv_settings,
@@ -171,6 +194,7 @@ class AppConfig(BaseSettings):
             file_secret_settings,
         )
 
+    # 从JSON创建配置实例
     @classmethod
     def from_json(cls, json_or_file: str | Path | dict, extra_params: str | Path | dict | None = None) -> AppConfig:
         """Create an AppConfig instance from JSON configuration sources.
@@ -203,9 +227,13 @@ class AppConfig(BaseSettings):
             When both sources are provided, settings from extra_params override
             corresponding values from the primary source.
         """
+        # 加载JSON配置
         json_config = load_json_yaml_arg(json_or_file)
+        # 加载额外参数
         extra_config = load_json_yaml_arg(extra_params)
+        # 更新配置
         json_config.update(extra_config)
+        # 创建并返回配置实例
         return cls(**json_config)
 
 
@@ -242,6 +270,7 @@ class App:
         print_config(): Displays current configuration settings.
     """
 
+    # 初始化应用实例
     def __init__(self, app_config: AppConfig | None = None):
         """Initialize the ChatHPC application instance.
 
@@ -270,14 +299,19 @@ class App:
             Model loading and other initializations must be performed explicitly
             by calling the appropriate methods after initialization.
         """
+        # 如果未提供配置，创建默认配置
         if app_config is None:
             app_config = AppConfig()  # type: ignore
 
+        # 保存配置
         self.config = app_config
 
+        # 初始化Jinja2环境
         self.jinja = jinja2.Environment(autoescape=False, keep_trailing_newline=True)  # noqa: S701
+        # 加载模板
         self._load_templates()
 
+    # 从JSON创建应用实例
     @classmethod
     def from_json(cls, json_or_file: str | Path | dict, extra_params: str | Path | dict | None = None) -> App:
         """Create an App instance from JSON configuration sources.
@@ -310,9 +344,12 @@ class App:
             When both sources are provided, settings from extra_params override
             corresponding values from the primary source.
         """
+        # 从JSON创建配置
         config = AppConfig.from_json(json_or_file, extra_params=extra_params)
+        # 创建并返回应用实例
         return cls(app_config=config)
 
+    # 加载模板
     def _load_templates(self):
         """Load and initialize prompt templates for training and inference.
 
@@ -343,40 +380,58 @@ class App:
             This method is called automatically during App initialization and should
             not typically be called directly.
         """
+        # 初始化相对路径
         relative_path = None
+        # 检查是否需要使用相对路径
         if (
             hasattr(self.config, "filename")
             and self.config.prompt_template is None
             and self.config.prompt_template_file is not None
             and not self.config.prompt_template_file.is_absolute()
         ):
+            # 获取配置文件所在目录
             filename = Path(self.config.filename)  # type: ignore
+            # 计算相对路径
             relative_path = filename.parent / self.config.prompt_template_file
 
+        # 检查是否直接提供了模板字符串
         if self.config.prompt_template is not None:
+            # 使用直接提供的模板字符串
             prompt_template_string = self.config.prompt_template
 
         else:
+            # 检查模板文件是否设置
             if self.config.prompt_template_file is None:
                 raise ValueError("Unexpected Error: Prompt template file is not set.")
 
+            # 检查模板文件是否存在
             if self.config.prompt_template_file.is_file():
+                # 加载模板文件
                 logger.info("Loading prompt template from {file}", file=self.config.prompt_template_file)
                 with open(self.config.prompt_template_file) as f:
                     prompt_template_string = f.read()
+            # 检查相对路径是否存在
             elif relative_path is not None and relative_path.is_file():
+                # 加载相对路径的模板文件
                 logger.info("Loading prompt template from {file}", file=relative_path)
                 with open(relative_path) as f:
                     prompt_template_string = f.read()
             else:
+                # 模板文件不存在
                 raise ValueError("Prompt template file not found.")
 
+        # 标准化模板
         prompt_template_string = template_utils.normalize_template(prompt_template_string)
+        # 保存标准化后的模板
         self.config.prompt_template = prompt_template_string
 
+        # 创建训练模板
         self.training_template = self.jinja.from_string(prompt_template_string)
+        # 分割模板为前缀和后缀
         self._prompt_prefix, self._prompt_postfix = template_utils.split_on_response(prompt_template_string)
+        # 创建推理模板
         self.inference_template = self.jinja.from_string(self._prompt_prefix)
+        # 创建后缀模板
         self.postfix_template = self.jinja.from_string(self._prompt_postfix)
 
     def load_base_model(self) -> None:
@@ -405,15 +460,18 @@ class App:
             for optimal performance on available hardware.
         """
 
+        # 加载基础模型
         logger.info("Loading the base model from {path}", path=self.config.base_model_path)
 
+        # 初始化分词器
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.base_model_path)
 
+        # 初始化模型
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model_path,
-            load_in_8bit=False,
-            torch_dtype=torch.float16,
-            device_map="auto",
+            load_in_8bit=False,  # 不使用8位量化
+            torch_dtype=torch.float16,  # 使用float16精度
+            device_map="auto",  # 自动设备映射
             # device_map={'':torch.cuda.current_device()}
         )
 
@@ -444,10 +502,13 @@ class App:
             before applying the finetuned layers.
         """
 
+        # 加载微调模型
         logger.info("Loading the finetuned model from {path}", path=self.config.finetuned_model_path)
 
+        # 先加载基础模型
         self.load_base_model()
 
+        # 加载微调层
         self.model = PeftModel.from_pretrained(self.model, self.config.finetuned_model_path)  # type: ignore
 
     def load_merged_model(self) -> None:
@@ -478,15 +539,18 @@ class App:
             for optimal performance on available hardware.
         """
 
+        # 加载合并模型
         logger.info("Loading the merged model from {path}", path=self.config.merged_model_path)
 
+        # 从基础模型加载分词器
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.base_model_path)
 
+        # 加载合并后的模型
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.merged_model_path,
-            load_in_8bit=False,
-            torch_dtype=torch.float16,
-            device_map="auto",
+            load_in_8bit=False,  # 不使用8位量化
+            torch_dtype=torch.float16,  # 使用float16精度
+            device_map="auto",  # 自动设备映射
             # device_map={'':torch.cuda.current_device()}
         )
 
@@ -508,11 +572,15 @@ class App:
             - The data file must be in JSON format
             - The data file path must be set in preferences.data_file
         """
+        # 加载数据集
         logger.info("Loading the dataset from {path}", path=self.config.data_file)
 
+        # 导入datasets库
         from datasets import load_dataset
 
+        # 加载训练数据集
         self.train_dataset = load_dataset("json", data_files=self.config.data_file.as_posix(), split="train")
+        # 加载评估数据集
         self.eval_dataset = load_dataset("json", data_files=self.config.data_file.as_posix(), split="train")
 
     def evaluate_model(self, prompt: str, max_new_tokens: int | None = None) -> str:
@@ -544,16 +612,22 @@ class App:
             Uses evaluation mode and torch.no_grad() for inference.
             Input is processed on CUDA if available.
         """
+        # 处理输入提示
         model_input = self.tokenizer(prompt, return_tensors="pt").to("cuda")
 
+        # 确定最大生成token数
         if max_new_tokens is None:
             max_new_tokens = self.config.max_response_tokens
 
+        # 设置模型为评估模式
         self.model.eval()  # type: ignore
+        # 禁用梯度计算
         with torch.no_grad():
+            # 生成响应
             output = self.model.generate(  # type: ignore
                 **model_input, max_new_tokens=max_new_tokens, pad_token_id=self.tokenizer.eos_token_id
             )[0]
+            # 解码响应
             return self.tokenizer.decode(output)
 
     def chat_prompt(self, **kwargs) -> str:
@@ -593,6 +667,7 @@ class App:
             - This method is typically used internally by chat_evaluate()
         """
 
+        # 生成格式化的提示
         return self.inference_template.render(**template_utils.map_keywords(kwargs))
 
     def chat_evaluate(self, **kwargs) -> str:
@@ -638,7 +713,9 @@ class App:
             - Response format follows inference template structure
             - Template variables can be passed via kwargs
         """
+        # 生成格式化提示
         prompt = self.chat_prompt(**kwargs)
+        # 评估模型并返回响应
         return self.evaluate_model(prompt)
 
     def chat_evaluate_extract(self, **kwargs) -> str:
@@ -669,11 +746,13 @@ class App:
             ```
 
         Note:
-            - Uses chat_evaluate() to generate the full response
+            - Uses chat_evaluate() for response generation
             - Automatically extracts the answer portion using template structure
             - More concise than chat_evaluate() for direct answer retrieval
         """
+        # 生成完整响应
         chat_response = self.chat_evaluate(**kwargs)
+        # 提取答案
         return self.extract_answer(chat_response, **kwargs)
 
     def training_prompt(self, **kwargs) -> str:
@@ -715,6 +794,7 @@ class App:
             - This method is typically used internally by tokenize_training_set()
         """
 
+        # 生成训练提示
         return self.training_template.render(**template_utils.map_keywords(kwargs))
 
     def tokenize_training_set(self) -> None:
@@ -743,10 +823,13 @@ class App:
             - The method uses the training_prompt template from config to format inputs before tokenization.
             - This method also handles padding token configuration and adds/removes EOS tokens as needed for the tokenization process.
         """
+        # 设置填充token
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.unk_token
 
+        # 定义分词函数
         def tokenize(prompt):
+            # 分词并截断
             result = self.tokenizer(
                 prompt,
                 truncation=True,
@@ -754,13 +837,16 @@ class App:
                 padding=False,
                 return_tensors=None,
             )
+            # 完整分词（用于比较）
             result_full = self.tokenizer(
                 prompt,
                 truncation=False,
                 padding=False,
                 return_tensors=None,
             )
+            # 检查是否被截断
             if result != result_full:
+                # 记录警告
                 logger.warning(
                     "Training tokenizer needs {token_count} tokens to fully tokenize the training input and max training tokens is set to {max_training_tokens}. \nPrompt: {prompt}\nCropped to: {prompt_cropped}",
                     token_count=len(result_full.data["input_ids"]),
@@ -769,20 +855,27 @@ class App:
                     prompt_cropped=self.tokenizer.decode(result.data["input_ids"]),
                 )
 
-            # "self-supervised learning" means the labels are also the inputs:
+            # 自监督学习：标签就是输入
             result["labels"] = result["input_ids"].copy()  # type: ignore
 
             return result
 
+        # 定义生成和分词提示的函数
         def generate_and_tokenize_prompt(data_point):
+            # 生成完整提示
             full_prompt = self.training_prompt(**data_point)
+            # 分词
             return tokenize(full_prompt)
 
+        # 添加EOS token
         self.tokenizer.add_eos_token = True
 
+        # 分词训练数据集
         self.tokenized_train_dataset = self.train_dataset.map(generate_and_tokenize_prompt)
+        # 分词验证数据集
         self.tokenized_val_dataset = self.eval_dataset.map(generate_and_tokenize_prompt)
 
+        # 恢复EOS token设置
         self.tokenizer.add_eos_token = False
 
     def train(self):
@@ -812,72 +905,74 @@ class App:
             Weights & Biases (wandb) for experiment tracking.
         """
 
+        # 配置LoRA
         self.peft_config = LoraConfig(
-            lora_alpha=16,
-            lora_dropout=0.05,
-            r=16,
-            bias="none",
-            task_type="CAUSAL_LM",
-            target_modules=[
+            lora_alpha=16,  # LoRA alpha参数
+            lora_dropout=0.05,  # LoRA dropout参数
+            r=16,  # LoRA秩
+            bias="none",  # 无偏置
+            task_type="CAUSAL_LM",  # 任务类型
+            target_modules=[  # 目标模块
                 "q_proj",
                 "k_proj",
                 "v_proj",
                 "o_proj",
             ],
         )
+        # 设置模型为训练模式
         self.model.train()  # type: ignore # put model back into training mode
+        # 准备模型用于k位训练
         self.model = prepare_model_for_kbit_training(self.model)
+        # 获取PEFT模型
         self.model = get_peft_model(self.model, self.peft_config)
+        # 打印可训练参数
         self.model.print_trainable_parameters()
 
+        # 设置批处理大小
         batch_size = 128
         per_device_train_batch_size = 32
+        # 计算梯度累积步数
         gradient_accumulation_steps = batch_size // per_device_train_batch_size
+        # 获取输出目录
         output_dir = self.config.training_output_dir.as_posix()
 
-        # resume_from_checkpoint = os.path.join(base_model_path, "pytorch_model-00001-of-00003.bin")
-
-        # if resume_from_checkpoint:
-        #     if os.path.exists(resume_from_checkpoint):
-        #         print(f"Restarting from {resume_from_checkpoint}")
-        #         adapters_weights = torch.load(resume_from_checkpoint)
-        #         set_peft_model_state_dict(self.model, adapters_weights)
-        #     else:
-        #         print(f"Checkpoint {resume_from_checkpoint} not found")
-
+        # 设置wandb项目
         wandb_project = "ChatHPC"
         if len(wandb_project) > 0:
             os.environ["WANDB_PROJECT"] = wandb_project
 
+        # 处理多GPU情况
         if torch.cuda.device_count() > 1:
-            # keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
+            # 防止Trainer尝试自己的DataParallelism
             print("multiple gpus detected!")
             self.model.is_parallelizable = True  # type: ignore
             self.model.model_parallel = True  # type: ignore
 
+        # 设置训练参数
         self.training_args = TrainingArguments(
             per_device_train_batch_size=per_device_train_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_steps=100,
-            max_steps=400,
+            warmup_steps=100,  # 预热步数
+            max_steps=400,  # 最大步数
             # max_steps=20,
-            learning_rate=3e-4,
-            fp16=True,
-            logging_steps=10,
-            optim="adamw_torch",
-            eval_strategy="steps",  # if val_set_size > 0 else "no",
-            save_strategy="steps",
-            eval_steps=20,
-            save_steps=20,
-            output_dir=output_dir,
+            learning_rate=3e-4,  # 学习率
+            fp16=True,  # 使用float16
+            logging_steps=10,  # 日志步数
+            optim="adamw_torch",  # 优化器
+            eval_strategy="steps",  # 评估策略
+            save_strategy="steps",  # 保存策略
+            eval_steps=20,  # 评估步数
+            save_steps=20,  # 保存步数
+            output_dir=output_dir,  # 输出目录
             # save_total_limit=3,
-            load_best_model_at_end=False,
+            load_best_model_at_end=False,  # 不加载最佳模型
             # ddp_find_unused_parameters=False if ddp else None,
-            group_by_length=True,  # group sequences of roughly the same length together to speed up training
-            report_to="wandb" if self.config.use_wandb else "none",
-            run_name=f"codellama-{datetime.now(tz=timezone('EST')).strftime('%Y-%m-%d-%H-%M')}",  # if use_wandb else None,
+            group_by_length=True,  # 按长度分组以加速训练
+            report_to="wandb" if self.config.use_wandb else "none",  # 报告目标
+            run_name=f"codellama-{datetime.now(tz=timezone('EST')).strftime('%Y-%m-%d-%H-%M')}",  # 运行名称
         )
 
+        # 创建Trainer
         trainer = Trainer(
             model=self.model,
             args=self.training_args,
@@ -888,24 +983,23 @@ class App:
             ),
         )
 
+        # 禁用缓存
         self.model.config.use_cache = False  # type: ignore
 
-        # old_state_dict = model.state_dit
-        # model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(
-        #     model, type(model)
-        # )
-
+        # 编译模型（如果支持）
         if torch.__version__ >= "2" and sys.platform != "win32":
             print("compiling the model")
             self.model = torch.compile(self.model)
 
-        # model.to('cuda')
-
+        # 开始训练
         trainer.train()
 
+        # 保存模型
         print("Saving Model...")
         trainer.model.save_pretrained(self.config.finetuned_model_path)  # type: ignore
+        # 保存README
         self.save_readme(self.config.finetuned_model_path)
+        # 注释掉的模型合并代码
         # print("Merging model...")
         # self.model = trainer.model.merge_and_unload()  # type: ignore
         # print("Saving merged model...")
@@ -941,41 +1035,65 @@ class App:
             >>> app.interactive()
             chathpc ()> What is Kokkos?
         """
+        # 处理历史文件
         history_file = self.config.prompt_history_file.expanduser().as_posix()
         try:
+            # 读取历史文件
             readline.read_history_file(history_file)
+            # 获取历史长度
             h_len = readline.get_current_history_length()
         except FileNotFoundError:
+            # 创建历史文件
             open(history_file, "wb+").close()
+            # 添加默认命令
             readline.add_history("/context")
             readline.add_history("/bye")
+            # 获取历史长度
             h_len = readline.get_current_history_length()
 
+        # 定义保存历史的函数
         def save_history(prev_h_len, histfile):
+            # 获取新历史长度
             new_h_len = readline.get_current_history_length()
+            # 设置历史长度
             readline.set_history_length(1000)
+            # 追加新历史
             readline.append_history_file(new_h_len - prev_h_len, histfile)
 
+        # 注册退出时保存历史
         atexit.register(save_history, h_len, history_file)
 
+        # 初始化上下文
         context = None
+        # 打印提示信息
         print("Use '/bye' to exit.\nUse '/context' to set context.")
+        # 主循环
         while True:
+            # 构建提示行
             prompt_line = f"{prompt} ({context})> " if context is not None else f"{prompt}> "
+            # 获取用户输入
             user_input = input(prompt_line)
+            # 处理退出命令
             if user_input == "/bye":
                 print("Goodbye!")
                 break
+            # 处理上下文命令
             if user_input.startswith("/context"):
+                # 提取上下文
                 context = user_input.replace("/context", "").strip()
+                # 如果上下文为空，提示用户输入
                 if context == "":
                     context = input("Context: ")
+                # 如果上下文为空，设置为None
                 if context.strip() == "":
                     context = None
                 continue
+            # 处理普通输入
             if args.extract:
+                # 提取回答
                 print(self.chat_evaluate_extract(question=user_input, context=context))
             else:
+                # 直接回答
                 print(self.chat_evaluate(question=user_input, context=context))
 
     def verify(
@@ -1006,8 +1124,10 @@ class App:
             tests_failed = app.verify(save_verify_data_path="verify_results.json")
             ```
         """
+        # 初始化验证数据
         verify_data = []
 
+        # 验证模型选择
         if ollama_model is not None and openai_model is not None:
             raise RuntimeError("Both Ollama model and OpenAI model cannot both be set. Only one should be set.")
         if ollama_model is not None and siliconflow_model is not None:
@@ -1015,53 +1135,83 @@ class App:
         if openai_model is not None and siliconflow_model is not None:
             raise RuntimeError("Both OpenAI model and SiliconFlow model cannot both be set. Only one should be set.")
 
+        # 初始化客户端
         openai_client = ChatHPCOpenAI(self.config) if openai_model is not None else None
         siliconflow_client = ChatHPCSiliconFlow(self.config) if siliconflow_model is not None else None
 
+        # 遍历训练数据集
         for i, item in tqdm(enumerate(self.train_dataset), "Verify", total=len(self.train_dataset)):  # type: ignore
+            # 映射关键字
             item_mapped = map_keywords(item)
+            # 根据模型类型生成响应
             if ollama_model is not None:
+                # 使用Ollama模型
                 response = ollama_chat_evaluate(self.config, ollama_model, **item_mapped)
             elif openai_model is not None and openai_client is not None:
+                # 使用OpenAI模型
                 response = openai_client.openai_chat_evaluate(openai_model, **item_mapped)
             elif siliconflow_model is not None and siliconflow_client is not None:
+                # 使用SiliconFlow模型
                 response = siliconflow_client.siliconflow_chat_evaluate(siliconflow_model, **item_mapped)
             else:
+                # 使用本地模型
                 response = self.chat_evaluate_extract(**item_mapped)
+            # 生成提示
             prompt = self.chat_prompt(**item_mapped)
+            # 生成训练提示
             training_prompt = self.training_prompt(**item_mapped)
 
+            # 创建数据点
             datapoint = OrderedDict()
             datapoint["index"] = i
             datapoint["prompt"] = prompt
             datapoint["training_prompt"] = training_prompt
+            # 添加上下文
             if "context" in item_mapped and item_mapped["context"] is not None:
                 datapoint["context"] = item_mapped["context"]
+            # 添加问题
             datapoint["question"] = item_mapped["prompt"]
+            # 添加答案
             datapoint["answer"] = item_mapped["response"]
+            # 添加响应
             datapoint["response"] = response
+            # 添加到验证数据
             verify_data.append(datapoint)
 
+        # 保存验证结果
         if save_verify_data_path is not None:
+            # 分离路径和扩展名
             save_verify_data_path_name, ext = os.path.splitext(save_verify_data_path)
+            # 检查扩展名
             if ext not in [".json", ""]:
+                # 记录警告
                 logger.warning(
                     'Expected save path extension to be ".json", but got "{}" ("{}"). Saving to "{}".',
                     save_verify_data_path,
                     ext,
                     save_verify_data_path_name + ".json",
                 )
+            # 保存为JSON
             save_json(save_verify_data_path_name, verify_data)
+            # 记录保存成功
             logger.info("Saved verify results to {file}", file=save_verify_data_path_name + ".json")
+            # 自动导出为Markdown
             if self.config.auto_export_markdown:
+                # 转换为Markdown
                 md = json_yaml_to_markdown(verify_data)
+                # 保存为Markdown
                 save_md(save_verify_data_path_name, md)
+                # 记录保存成功
                 logger.info("Saved verify results as markdown to {file}", file=save_verify_data_path_name + ".md")
 
+        # 计算错误
         errors = 0
         for d in verify_data:
+            # 比较响应和答案
             if ignore_minor(d["response"]) != ignore_minor(d["answer"]):
+                # 增加错误计数
                 errors += 1
+                # 打印错误信息
                 print("Error: answer mismatch")
                 print(f"Index: {d['index']}")
                 print(f"Answer:\n{d['answer']}")
@@ -1069,7 +1219,9 @@ class App:
                 print("**********************************************************")
                 print()
 
+        # 打印错误总数
         print(f"Total mismatches: {errors}")
+        # 返回错误数
         return errors
 
     def test(
@@ -1080,20 +1232,45 @@ class App:
         openai_model: str | None = None,
         siliconflow_model: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Test model against provided testing dataset.
+        """测试模型在提供的测试数据集上的性能
 
-        This method evaluates the model on the test file.
+        此方法评估模型在测试文件上的表现，为每个测试用例生成响应，并在测试数据中提供预期答案时将其与模型响应进行比较。
 
-        Args:
-            save_test_data_path (Union[str, Path, None]): Optional path to save
-                test results.
-            ollama_model (str, optional): Name of Ollama model, if using Ollama instead of app's model
-            siliconflow_model (str, optional): Name of SiliconFlow model, if using SiliconFlow instead of app's model
+        参数:
+            test_dataset (str): 测试数据集文件路径（JSON或YAML格式）
+            save_test_data_path (Union[str, Path, None]): 保存测试结果的可选路径
+            ollama_model (str, optional): 使用Ollama模型时的模型名称
+            openai_model (str, optional): 使用OpenAI模型时的模型名称
+            siliconflow_model (str, optional): 使用SiliconFlow模型时的模型名称
 
-        Returns:
-            int: result of the test.
+        返回值:
+            list[dict[str, Any]]: 测试结果列表，每个结果包含提示、上下文、问题、响应和可选的答案
 
-        Example:
+        执行流程:
+            1. 验证模型选择（只能指定一个外部模型）
+            2. 初始化所选外部模型的客户端（如果有）
+            3. 从指定文件加载测试数据集
+            4. 对每个测试用例:
+               a. 将测试用例中的关键字映射到标准格式
+               b. 使用所选模型（本地或外部）生成模型响应
+               c. 创建包含测试用例详细信息和模型响应的数据点
+               d. 将数据点添加到结果列表
+            5. 将测试结果保存到指定文件（如果提供）
+            6. 如果测试数据包含预期答案，计算准确率:
+               a. 将模型响应与预期答案进行比较
+               b. 统计不匹配数量并计算正确百分比
+               c. 打印准确率统计信息
+
+        数据结构:
+            测试数据集应为JSON或YAML格式，包含以下内容:
+            - "context": 测试用例的可选上下文信息
+            - "question"或"prompt": 测试问题/提示
+            - "response": 用于比较的可选预期答案
+
+        提示模板:
+            使用AppConfig中配置的提示模板生成模型输入
+
+        示例:
             ```python
             app = App()
             test_results = app.test(
@@ -1102,8 +1279,10 @@ class App:
             print(f"Test completed with {len(test_results)} cases")
             ```
         """
+        # 初始化结果列表
         results = []
 
+        # 验证模型选择
         if ollama_model is not None and openai_model is not None:
             raise RuntimeError("Both Ollama model and OpenAI model cannot both be set. Only one should be set.")
         if ollama_model is not None and siliconflow_model is not None:
@@ -1111,55 +1290,114 @@ class App:
         if openai_model is not None and siliconflow_model is not None:
             raise RuntimeError("Both OpenAI model and SiliconFlow model cannot both be set. Only one should be set.")
 
+        # 初始化OpenAI客户端（如果指定了OpenAI模型）
         openai_client = ChatHPCOpenAI(self.config) if openai_model is not None else None
+        # 初始化SiliconFlow客户端（如果指定了SiliconFlow模型）
         siliconflow_client = ChatHPCSiliconFlow(self.config) if siliconflow_model is not None else None
 
+        # 加载测试数据集（支持JSON或YAML格式）
         test_data = load_json_yaml_arg(test_dataset, False)
+        # 计算测试数据集的长度
         test_data_len = len(test_data)
 
+        # 使用tqdm显示测试进度条
         for i, item in tqdm(enumerate(test_data), "Test", total=test_data_len):  # type: ignore
+            # 将测试数据中的关键字映射到标准格式
+            # 核心功能：将不同来源的数据字段名统一映射到标准化的字段名，确保后续处理的一致性
+            # 实现逻辑：
+            # 1. 遍历输入字典的每个键值对
+            # 2. 对每个键，调用keyword_alias函数获取其标准化别名
+            # 3. 构建新的字典，使用标准化的键名和原始值
+            # 输入：原始测试数据字典，例如：{"Context": "OpenMP to Kokkos translation", "Question": "Can you translate this OpenACC code to Kokkos? ..."}
+            # 输出：标准化后的字典，例如：{"context": "OpenMP to Kokkos translation", "prompt": "Can you translate this OpenACC code to Kokkos? ..."}
+            # 技术优势：
+            # 1. 灵活性：支持多种数据格式，如YAML、JSON等不同来源的数据
+            # 2. 一致性：确保后续模板渲染和模型评估使用统一的字段名
+            # 3. 可扩展性：通过修改ALIASES字典即可支持新的字段映射
+            # 4. 代码简洁：使用字典推导式和辅助函数，代码简洁易维护
+            # 映射示例（基于kokkos_testing.yaml）：
+            # 映射前：{"Context": "OpenMP to Kokkos translation", "Question": "Can you translate this OpenACC code to Kokkos? ..."}
+            # 映射后：{"context": "OpenMP to Kokkos translation", "prompt": "Can you translate this OpenACC code to Kokkos? ..."}
+            # 应用场景：
+            # - 处理不同格式的测试数据集
+            # - 确保模板渲染时使用正确的变量名
+            # - 统一模型评估的输入格式
             item_mapped = map_keywords(item)
+            
+            # 根据指定的模型类型生成响应
             if ollama_model is not None:
+                # 使用Ollama模型生成响应
                 response = ollama_chat_evaluate(self.config, ollama_model, **item_mapped)
             elif openai_model is not None and openai_client is not None:
+                # 使用OpenAI模型生成响应
                 response = openai_client.openai_chat_evaluate(openai_model, **item_mapped)
             elif siliconflow_model is not None and siliconflow_client is not None:
+                # 使用SiliconFlow模型生成响应
                 response = siliconflow_client.siliconflow_chat_evaluate(siliconflow_model, **item_mapped)
             else:
+                # 使用本地微调模型生成响应
                 response = self.chat_evaluate_extract(**item_mapped)
+            
+            # 生成用于模型输入的提示
             prompt = self.chat_prompt(**item_mapped)
+            
+            # 创建有序字典存储测试结果数据点
             datapoint = OrderedDict()
+            # 添加索引
             datapoint["index"] = i
+            # 添加提示
             datapoint["prompt"] = prompt
+            # 如果有上下文信息，添加上下文
             if "context" in item_mapped and item_mapped["context"] is not None:
                 datapoint["context"] = item_mapped["context"]
+            # 添加问题
             datapoint["question"] = item_mapped["prompt"]
+            # 如果有预期答案，添加答案
+            # 这就懂了，如果测试数据集里提供了预期的输出，那么模型生成的就是answer，然后会算一下匹配程度，否则就不算了
             if "response" in item_mapped and item_mapped["response"] is not None:
                 datapoint["answer"] = item_mapped["response"]
+            # 添加模型响应
             datapoint["response"] = response
+            # 将数据点添加到结果列表
             results.append(datapoint)
 
+        # 如果指定了保存路径，保存测试结果
         if save_test_data_path is not None:
+            # 分离文件路径和扩展名
             save_test_data_path_name, ext = os.path.splitext(save_test_data_path)
+            # 检查扩展名是否为.json
             if ext not in [".json", ""]:
+                # 如果不是.json扩展名，记录警告并使用.json扩展名
                 logger.warning(
                     'Expected save path extension to be ".json", but got "{}" ("{}"). Saving to "{}".',
                     save_test_data_path,
                     ext,
                     save_test_data_path_name + ".json",
                 )
+            # 保存测试结果为JSON文件
             save_json(save_test_data_path_name, results)
+            # 记录保存成功的日志
             logger.info("Saved test results to {file}", file=save_test_data_path_name + ".json")
+            # 如果配置了自动导出Markdown，保存为Markdown格式
             if self.config.auto_export_markdown:
+                # 将测试结果转换为Markdown格式
                 md = json_yaml_to_markdown(results)
+                # 保存Markdown文件
                 save_md(save_test_data_path_name, md)
+                # 记录保存成功的日志
                 logger.info("Saved test results as markdown to {file}", file=save_test_data_path_name + ".md")
 
+        # 检查测试结果中是否包含答案字段
         if "answer" in next(iter(results), {}):  # type: ignore
+            # 初始化错误计数
             errors = 0
+            # 遍历所有测试结果
             for d in results:
+                # 比较模型响应与预期答案（忽略轻微差异）
                 if ignore_minor(d["response"]) != ignore_minor(d["answer"]):
+                    # 如果不匹配，增加错误计数
                     errors += 1
+                    # 打印不匹配的测试信息
                     print("Missed test:")
                     print(f"Index: {d['index']}")
                     print(f"Answer:\n{d['answer']}")
@@ -1167,8 +1405,11 @@ class App:
                     print("**********************************************************")
                     print()
 
+            # 计算正确的测试数量
             correct = test_data_len - errors
+            # 打印准确率统计信息
             print(f"Total correct: {correct} out of {test_data_len} ({(float(correct)/test_data_len) * 100:.2f}%)")
+        # 返回测试结果列表
         return results
 
     def print_config(self) -> None:
