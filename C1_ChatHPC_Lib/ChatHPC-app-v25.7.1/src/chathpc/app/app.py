@@ -1103,26 +1103,70 @@ class App:
         openai_model: str | None = None,
         siliconflow_model: str | None = None,
     ) -> int:
-        """Verify model outputs against the training dataset.
+        """验证模型输出与训练数据集的匹配度
 
-        This method runs verification tests on the model by comparing its outputs
-        against the training set.
+        此方法通过将模型输出与训练数据集进行比较，对模型进行验证测试。
+        支持使用本地模型或外部模型（Ollama、OpenAI、SiliconFlow）进行验证。
 
-        Args:
-            save_verify_data_path (Union[str, Path, None]): Optional path to save
-                verification results.
-            ollama_model (str, optional): Name of Ollama model, if using Ollama instead of app's model
-            siliconflow_model (str, optional): Name of SiliconFlow model, if using SiliconFlow instead of app's model
+        参数:
+            save_verify_data_path (Union[str, Path, None]): 保存验证结果的可选路径。如果提供，
+                验证结果将保存为JSON文件，并在配置了auto_export_markdown时保存为Markdown文件。
+            ollama_model (str, optional): Ollama模型名称，如果使用Ollama而不是应用程序的模型。
+            openai_model (str, optional): OpenAI模型名称，如果使用OpenAI而不是应用程序的模型。
+            siliconflow_model (str, optional): SiliconFlow模型名称，如果使用SiliconFlow而不是应用程序的模型。
 
-        Returns:
-            int: The number of errors.
+        返回值:
+            int: 验证过程中发现的错误数量。值为0表示所有测试用例都通过验证，
+                大于0的值表示有对应数量的测试用例未通过验证。
 
-        Example:
+        异常:
+            RuntimeError: 当同时指定了多个外部模型时抛出，例如同时设置了ollama_model和openai_model。
+            ValueError: 当使用外部模型但缺少必要的配置（如API密钥）时，可能由客户端初始化时抛出。
+
+        关键实现逻辑:
+            1. 验证模型选择的唯一性（只能选择一个外部模型）
+            2. 初始化所选外部模型的客户端（如果有）
+            3. 遍历训练数据集中的每个数据点
+            4. 对每个数据点进行字段映射，确保格式标准化
+            5. 使用选定的模型生成响应
+            6. 构建包含提示、上下文、问题、预期答案和模型响应的数据点
+            7. 保存验证结果（如果指定了保存路径）
+            8. 比较模型响应与预期答案，统计错误数量
+            9. 打印错误详情和总数
+            10. 返回错误数量
+
+        使用示例:
             ```python
+            # 使用本地微调模型进行验证
             app = App()
             app.load_merged_model()
-            tests_failed = app.verify(save_verify_data_path="verify_results.json")
+            errors = app.verify(save_verify_data_path="verification_results.json")
+            print(f"验证完成，发现 {errors} 个错误")
+
+            # 使用Ollama模型进行验证
+            errors = app.verify(
+                save_verify_data_path="ollama_verification.json",
+                ollama_model="llama3"
+            )
+
+            # 使用OpenAI模型进行验证
+            errors = app.verify(
+                save_verify_data_path="openai_verification.json",
+                openai_model="gpt-4"
+            )
+
+            # 使用SiliconFlow模型进行验证
+            errors = app.verify(
+                save_verify_data_path="siliconflow_verification.json",
+                siliconflow_model="Pro/deepseek-ai/DeepSeek-V3.2"
+            )
             ```
+
+        注意事项:
+            - 验证使用的是训练数据集，因此结果可能存在过拟合的情况
+            - 外部模型需要相应的配置（如API密钥）才能正常工作
+            - 保存路径如果不包含.json扩展名，会自动添加
+            - 错误比较使用ignore_minor函数，会忽略轻微的差异
         """
         # 初始化验证数据
         verify_data = []

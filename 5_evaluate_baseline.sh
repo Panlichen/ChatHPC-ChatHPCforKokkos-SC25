@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Generate timestamp in format yyyymmddhhmmss
+TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+
 echo '*** Running 5_evaluate_baseline.sh ***'
 echo
 echo '*** Ensure commands are running in correct directory. ***'
@@ -9,10 +12,10 @@ cd $SCRIPT_DIR
 
 echo
 echo '*** Evaluate code-llama base model ***'
-echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md"
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md
+echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results_${TIMESTAMP}.json > evaluation/code_llama_base_results_${TIMESTAMP}.md"
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results_${TIMESTAMP}.json > evaluation/code_llama_base_results_${TIMESTAMP}.md
 
 # echo
 # 
@@ -24,10 +27,10 @@ uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluatio
 #     exit 1
 # else
 #     echo "OPENAI_API_KEY is set."
-#     echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json openai test --model gpt-4o --save_results_file evaluation/openai_gpt-4o_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-#     uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json openai test --model gpt-4o --save_results_file evaluation/openai_gpt-4o_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-#     echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/openai_gpt-4o_base_results.json > evaluation/openai_gpt-4o_base_results.md"
-#     uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/openai_gpt-4o_base_results.json > evaluation/openai_gpt-4o_base_results.md
+#     echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json openai test --model gpt-4o --save_results_file evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+#     uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json openai test --model gpt-4o --save_results_file evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+#     echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.json > evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.md"
+#     uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.json > evaluation/openai_gpt-4o_base_results_${TIMESTAMP}.md
 # fi
 
 echo
@@ -57,9 +60,9 @@ else
     echo "Using SiliconFlow model: $SILICONFLOW_MODEL"
     # Create filename with model name (replacing slashes with underscores)
     MODEL_FILENAME=$(echo "$SILICONFLOW_MODEL" | tr '/' '_')
-    echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
-    echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results.json > evaluation/siliconflow_${MODEL_FILENAME}_results.md"
-    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results.json > evaluation/siliconflow_${MODEL_FILENAME}_results.md
+    echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+    echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.md"
+    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.md
 fi
 

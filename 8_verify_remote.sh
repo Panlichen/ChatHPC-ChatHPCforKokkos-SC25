@@ -4,11 +4,12 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Generate timestamp in format yyyymmddhhmmss
 TIMESTAMP=$(date +"%Y%m%d%H%M%S")
 
-echo '*** Running 1_setup.sh ***'
+echo '*** Running 8_verify_remote.sh ***'
 echo
 echo '*** Ensure commands are running in correct directory. ***'
 echo cd $SCRIPT_DIR
 cd $SCRIPT_DIR
+
 echo
 echo '*** Check for UV ***'
 if ! command -v uv &> /dev/null; then
@@ -20,10 +21,6 @@ if ! command -v uv &> /dev/null; then
 else
     echo "uv is installed."
 fi
-echo
-echo '*** Test running ChatHPC CLI command. ***'
-echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
-uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
 
 echo
 
@@ -37,7 +34,7 @@ fi
 
 echo
 
-echo '*** Evaluate SiliconFlow model ***'
+echo '*** Verifying SiliconFlow model ***'
 if [ -z "$SILICONFLOW_API_KEY" ]; then
     echo "Error: SILICONFLOW_API_KEY is not set."
     echo "Please create a .env file with your SiliconFlow API key."
@@ -52,9 +49,8 @@ else
     echo "Using SiliconFlow model: $SILICONFLOW_MODEL"
     # Create filename with model name (replacing slashes with underscores)
     MODEL_FILENAME=$(echo "$SILICONFLOW_MODEL" | tr '/' '_')
-    echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
-    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml > evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.out
-    echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.md"
-    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_results_${TIMESTAMP}.md
+    echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow verify --model "$SILICONFLOW_MODEL" --save_results_file verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml
+    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow verify --model "$SILICONFLOW_MODEL" --save_results_file verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.json C2_Kokkos_Dataset/kokkos_testing.yaml > verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.out
+    echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.json > verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.md"
+    uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.json > verify/siliconflow_${MODEL_FILENAME}_verify_results_${TIMESTAMP}.md
 fi
-
