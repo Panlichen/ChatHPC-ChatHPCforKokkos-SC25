@@ -881,9 +881,70 @@ class App:
     def train(self):
         """Train the model using fine-tuning layers.
 
-        This method performs fine-tuning of the base model using LoRA (Low-Rank Adaptation)
-        configuration. It prepares the model for training, sets up training arguments,
-        and executes the training process.
+        训练流程详解：
+        1. 数据预处理：
+           - 加载训练数据集和验证数据集（通过load_datasets()方法）
+           - 对数据集进行标记化处理（通过tokenize_training_set()方法）
+           - 准备数据加载器和数据碰撞器
+
+        2. 模型初始化：
+           - 配置LoRA参数（LoraConfig）
+           - 设置模型为训练模式
+           - 准备模型用于k位训练
+           - 获取PEFT模型
+
+        3. 训练循环：
+           - 配置训练参数（TrainingArguments）
+           - 创建Trainer实例
+           - 编译模型（如果支持）
+           - 执行训练过程
+
+        4. 评估验证：
+           - 在训练过程中定期评估模型性能
+           - 基于评估结果调整模型参数
+
+        5. 文件生成机制：
+           - 触发条件：训练完成后自动生成
+           - 数据来源：训练过程中的模型参数和配置信息
+           - 保存机制：
+             * 微调模型参数保存到config.finetuned_model_path
+             * 生成README.md文件，记录训练信息
+             * 注释掉的代码显示了合并模型的保存路径（config.merged_model_path）
+
+        6. 补丁参数文件结构：
+           - 由PEFT库自动生成，包含以下字段：
+             * lora_alpha: LoRA缩放因子，类型为整数
+             * lora_dropout: 丢弃率，类型为浮点数
+             * r: LoRA秩，类型为整数
+             * bias: 偏置处理方式，类型为字符串
+             * task_type: 任务类型，类型为字符串
+             * target_modules: 目标模块列表，类型为字符串数组
+             * modules_to_save: 要保存的模块，类型为字符串数组
+             * inference_mode: 推理模式，类型为布尔值
+
+        7. PEFT（Parameter-Efficient Fine-Tuning）详解：
+           - 含义：参数高效微调，一种只微调模型部分参数的技术
+           - 核心原理：
+             * 冻结原始模型参数
+             * 在模型的关键层（如注意力机制）中插入小型可训练组件
+             * 只训练这些新增的小型组件
+             * 显著减少可训练参数数量
+           - 应用方式：
+             * 使用LoRA（Low-Rank Adaptation）方法
+             * 在模型的q_proj、k_proj、v_proj、o_proj等关键模块中应用
+             * 通过prepare_model_for_kbit_training和get_peft_model实现
+
+        训练依赖关系分析：
+        1. 执行2_train.sh时，第二步refinement训练基于：
+           - 直接使用基础模型参数重新开始训练
+           - 原因：每次训练都会调用load_base_model()加载基础模型
+
+        2. 代码实现中的训练依赖关系：
+           - 体现：每次训练都从基础模型开始，没有加载之前训练的模型
+           - 工作原理：
+             * 训练前通过load_base_model()加载原始基础模型
+             * 应用LoRA配置创建新的PEFT模型
+             * 训练完成后保存到指定路径，但后续训练不会自动加载
 
         Requires:
             - App.load_datasets() must be called first to load training data
