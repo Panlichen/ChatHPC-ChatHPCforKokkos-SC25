@@ -73,7 +73,7 @@ else
         TEST_NAME=${TEST_NAME//_/-}
         TEST_NAME=${TEST_NAME//\//-}
         
-        echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.json $TEST_FILE
+        echo uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.json $TEST_FILE  > evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.out
         uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model "$SILICONFLOW_MODEL" --save_results_file evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.json $TEST_FILE > evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.out
         echo "uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.md"
         uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.json > evaluation/siliconflow_${MODEL_FILENAME}_${TEST_NAME}_results_${TIMESTAMP}.md
