@@ -1,0 +1,175 @@
+*** Running 1_setup.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Check for UV ***
+uv is installed.
+
+*** Test running ChatHPC CLI command. ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc -h
+usage: chathpc [-h] [--debug] [--log_level LOG_LEVEL] [--config CONFIG]
+               [--extract] [--no-extract] [--data_file Path]
+               [--base_model_path Path] [--finetuned_model_path Path]
+               [--merged_model_path Path] [--training_output_dir Path]
+               [--max_training_tokens int] [--max_response_tokens int]
+               [--prompt_history_file Path]
+               [--prompt_template_file {Path,null}]
+               [--prompt_template {str,null}] [--auto_export_markdown bool]
+               [--use_wandb bool]
+               {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai,siliconflow}
+               ...
+
+ChatHPC Application. Used to train and interact with ChatX applications which
+are part of ChatHPC.
+
+options:
+  -h, --help            show this help message and exit
+  --debug               Open debug port (5678).
+  --log_level LOG_LEVEL
+                        Log level.
+  --config CONFIG       Path to config json file.
+  --extract             Extract the answer from the response.
+  --no-extract          Show the response without extracting the answer.
+  --data_file Path      Path to the JSON file containing training data for
+                        model fine-tuning. (required)
+  --base_model_path Path
+                        Path to the pre-trained base LLM model directory.
+                        (default: /auto/projects/ChatHPC/models/cache/meta-
+                        llama/CodeLlama-7b-hf)
+  --finetuned_model_path Path
+                        Path where fine-tuned model layers will be saved.
+                        (default: peft_adapter)
+  --merged_model_path Path
+                        Path where the complete merged model will be saved.
+                        (default: merged_adapters)
+  --training_output_dir Path
+                        Path where training output will be saved. (default:
+                        training_checkpoints)
+  --max_training_tokens int
+                        Maximum number of tokens to use to tokenize the
+                        training sets. (default: 512)
+  --max_response_tokens int
+                        Maximum number of tokens to generate in model
+                        responses. (default: 600)
+  --prompt_history_file Path
+                        Path to the file containing interactive prompt
+                        history. (default: ~/.chathpc_history)
+  --prompt_template_file {Path,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --prompt_template {str,null}
+                        Path to the prompt template to use for training and
+                        inference. (default: null)
+  --auto_export_markdown bool
+                        Auto export output files to markdown. (default: False)
+  --use_wandb bool      Whether to use Weights & Biases for logging. (default:
+                        False)
+
+subcommands:
+  valid subcommands
+
+  {config,train,run,run_base,run_fine,run_merged,verify,test,base,ollama,openai,siliconflow}
+    config              Print current config
+    train               Finetune the model
+    run                 Interact with the model
+    run_base            Interact with the base model
+    run_fine            Interact with the finetuned model
+    run_merged          Interact with the merged model
+    verify              Verify the trained model with the training dataset
+    test                Test the trained model with a testing dataset
+    base                base subcommands
+    ollama              Ollama subcommands
+    openai              OpenAI subcommands
+    siliconflow         SiliconFlow subcommands
+
+*** Check for base model weights... ***
+CodeLlama-7b-hf base model found
+*** Running 5_evaluate_baseline.sh ***
+
+*** Ensure commands are running in correct directory. ***
+cd /data/home/scyb581/run/ChatHPC-ChatHPCforKokkos-SC25
+
+*** Evaluate code-llama base model ***
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json base test --save_results_file evaluation/code_llama_base_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:08<00:08,  8.51s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:11<00:00,  5.47s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:11<00:00,  5.93s/it]
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:13<09:44, 13.28s/it]Test:   4%|▍         | 2/45 [00:25<08:59, 12.56s/it]Test:   7%|▋         | 3/45 [00:37<08:37, 12.32s/it]Test:   9%|▉         | 4/45 [00:49<08:20, 12.20s/it]Test:  11%|█         | 5/45 [01:01<08:05, 12.14s/it]Test:  13%|█▎        | 6/45 [01:13<07:51, 12.10s/it]Test:  16%|█▌        | 7/45 [01:25<07:38, 12.08s/it]Test:  18%|█▊        | 8/45 [01:37<07:26, 12.06s/it]Test:  20%|██        | 9/45 [01:49<07:13, 12.04s/it]Test:  22%|██▏       | 10/45 [02:01<07:01, 12.03s/it]Test:  24%|██▍       | 11/45 [02:13<06:51, 12.09s/it]Test:  27%|██▋       | 12/45 [02:26<06:43, 12.22s/it]Test:  29%|██▉       | 13/45 [02:38<06:34, 12.31s/it]Test:  31%|███       | 14/45 [02:50<06:19, 12.26s/it]Test:  33%|███▎      | 15/45 [03:03<06:09, 12.32s/it]Test:  36%|███▌      | 16/45 [03:15<05:59, 12.39s/it]Test:  38%|███▊      | 17/45 [03:28<05:47, 12.43s/it]Test:  40%|████      | 18/45 [03:40<05:32, 12.31s/it]Test:  42%|████▏     | 19/45 [03:52<05:19, 12.29s/it]Test:  44%|████▍     | 20/45 [04:04<05:06, 12.25s/it]Test:  47%|████▋     | 21/45 [04:16<04:52, 12.20s/it]Test:  49%|████▉     | 22/45 [04:28<04:39, 12.15s/it]Test:  51%|█████     | 23/45 [04:41<04:27, 12.14s/it]Test:  53%|█████▎    | 24/45 [04:53<04:16, 12.21s/it]Test:  56%|█████▌    | 25/45 [05:05<04:06, 12.31s/it]Test:  58%|█████▊    | 26/45 [05:18<03:55, 12.37s/it]Test:  60%|██████    | 27/45 [05:30<03:43, 12.41s/it]Test:  62%|██████▏   | 28/45 [05:43<03:31, 12.45s/it]Test:  64%|██████▍   | 29/45 [05:56<03:19, 12.47s/it]Test:  67%|██████▋   | 30/45 [06:08<03:05, 12.37s/it]Test:  69%|██████▉   | 31/45 [06:20<02:53, 12.42s/it]Test:  71%|███████   | 32/45 [06:33<02:41, 12.41s/it]Test:  73%|███████▎  | 33/45 [06:45<02:29, 12.44s/it]Test:  76%|███████▌  | 34/45 [06:58<02:17, 12.47s/it]Test:  78%|███████▊  | 35/45 [07:10<02:04, 12.40s/it]Test:  80%|████████  | 36/45 [07:22<01:50, 12.29s/it]Test:  82%|████████▏ | 37/45 [07:34<01:37, 12.22s/it]Test:  84%|████████▍ | 38/45 [07:46<01:25, 12.17s/it]Test:  87%|████████▋ | 39/45 [07:58<01:13, 12.17s/it]Test:  89%|████████▉ | 40/45 [08:11<01:01, 12.28s/it]Test:  91%|█████████ | 41/45 [08:23<00:49, 12.35s/it]Test:  93%|█████████▎| 42/45 [08:36<00:37, 12.37s/it]Test:  96%|█████████▌| 43/45 [08:48<00:24, 12.36s/it]Test:  98%|█████████▊| 44/45 [09:00<00:12, 12.35s/it]Test: 100%|██████████| 45/45 [09:12<00:00, 12.26s/it]Test: 100%|██████████| 45/45 [09:12<00:00, 12.29s/it]
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/code_llama_base_results.json > evaluation/code_llama_base_results.md
+
+Loading environment variables from .env file
+
+*** Evaluate SiliconFlow model ***
+SILICONFLOW_API_KEY is set.
+Using SiliconFlow model: Pro/deepseek-ai/DeepSeek-V3.2
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc --config config_initial.json siliconflow test --model Pro/deepseek-ai/DeepSeek-V3.2 --save_results_file evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.json C2_Kokkos_Dataset/kokkos_testing.yaml
+Test:   0%|          | 0/45 [00:00<?, ?it/s]Test:   2%|▏         | 1/45 [00:13<10:02, 13.70s/it]Test:   4%|▍         | 2/45 [00:39<15:00, 20.93s/it]Test:   7%|▋         | 3/45 [01:00<14:27, 20.66s/it]Test:   9%|▉         | 4/45 [02:22<30:43, 44.95s/it]Test:  11%|█         | 5/45 [02:41<23:45, 35.64s/it]Test:  13%|█▎        | 6/45 [02:55<18:26, 28.37s/it]Test:  16%|█▌        | 7/45 [03:45<22:21, 35.31s/it]Test:  18%|█▊        | 8/45 [04:02<18:19, 29.72s/it]Test:  20%|██        | 9/45 [04:18<15:13, 25.37s/it]Test:  22%|██▏       | 10/45 [04:31<12:32, 21.51s/it]Test:  24%|██▍       | 11/45 [04:49<11:34, 20.44s/it]Test:  24%|██▍       | 11/45 [07:50<24:14, 42.79s/it]
+Traceback (most recent call last):
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+  File "/usr/lib/python3.10/http/client.py", line 1375, in getresponse
+    response.begin()
+  File "/usr/lib/python3.10/http/client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "/usr/lib/python3.10/http/client.py", line 279, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "/usr/lib/python3.10/socket.py", line 705, in readinto
+    return self._sock.recv_into(b)
+  File "/usr/lib/python3.10/ssl.py", line 1303, in recv_into
+    return self.read(nbytes, buffer)
+  File "/usr/lib/python3.10/ssl.py", line 1159, in read
+    return self._sslobj.read(len, buffer)
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/util/retry.py", line 490, in increment
+    raise reraise(type(error), error, _stacktrace)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=180)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/siliconflow_interface.py", line 78, in siliconflow_chat_evaluate
+    response = requests.post(self.api_url, headers=headers, json=payload, timeout=180)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/lib/python3.10/site-packages/requests/adapters.py", line 690, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=180)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/.venv/bin/chathpc", line 10, in <module>
+    sys.exit(cli())
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/__main__.py", line 252, in cli
+    args.func(args, app_config)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/__main__.py", line 106, in siliconflow_test
+    app.test(test_dataset=args.test_json_path, save_test_data_path=args.save_results_file, siliconflow_model=args.model)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/app.py", line 1336, in test
+    response = siliconflow_client.siliconflow_chat_evaluate(siliconflow_model, **item_mapped)
+  File "/data/run01/scyb581/ChatHPC-ChatHPCforKokkos-SC25/C1_ChatHPC_Lib/ChatHPC-app-v25.7.1/src/chathpc/app/siliconflow_interface.py", line 97, in siliconflow_chat_evaluate
+    backoff_time = (2 ** retry_count) + (time.random() * 0.1)
+AttributeError: module 'time' has no attribute 'random'
+uv run --project C1_ChatHPC_Lib/ChatHPC-app-v25.7.1 chathpc-data-to-md evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.json > evaluation/siliconflow_Pro_deepseek-ai_DeepSeek-V3.2_results.md

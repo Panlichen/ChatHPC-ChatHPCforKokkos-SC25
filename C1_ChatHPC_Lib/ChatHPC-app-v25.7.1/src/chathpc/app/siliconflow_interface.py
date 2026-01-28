@@ -94,7 +94,7 @@ class ChatHPCSiliconFlow:
                     return None
                 
                 # Exponential backoff with jitter
-                backoff_time = (2 ** retry_count) + (time.random() * 0.1)
+                backoff_time = (2 ** retry_count) + 5
                 logger.warning(f"Network error calling SiliconFlow API (attempt {retry_count}/{max_retries}): {e}")
                 logger.info(f"Waiting {backoff_time:.2f} seconds before next retry...")
                 time.sleep(backoff_time)
