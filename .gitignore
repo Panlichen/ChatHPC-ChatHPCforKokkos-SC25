@@ -2,5 +2,4 @@
 /basemodels/
 /ChatHPC-app-*.zip
 /.vscode/
-/evaluation/
 .env

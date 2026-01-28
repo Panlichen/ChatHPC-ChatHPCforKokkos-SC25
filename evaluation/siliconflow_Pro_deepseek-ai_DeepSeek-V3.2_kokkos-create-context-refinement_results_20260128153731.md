@@ -1,0 +1,2134 @@
+# ChatHPC JSON to Markdown
+
+## Index 0
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for
+for (i = 0, i < n, i++) {
+  y[i] = a * x[i] + y[i];
+}
+
+
+### Response
+
+Here's the Kokkos translation of your OpenMP SAXPY code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// ... in your function/scope:
+Kokkos::parallel_for("saxpy", n, KOKKOS_LAMBDA(int i) {
+    y[i] = a * x[i] + y[i];
+});
+```
+
+Key changes:
+1. **Header**: Include `Kokkos_Core.hpp`
+2. **Parallel construct**: Replace `#pragma omp parallel for` with `Kokkos::parallel_for`
+3. **Kernel name**: Add a string label ("saxpy") for profiling/debugging
+4. **Lambda**: Use `KOKKOS_LAMBDA` (or `KOKKOS_FUNCTION` for more complex cases)
+5. **Loop bounds**: Pass `n` directly instead of the `for` loop syntax
+
+**Important prerequisites:**
+- Arrays `x` and `y` must be `Kokkos::View` types (e.g., `Kokkos::View<double*>`) or raw pointers in accessible memory space
+- Kokkos must be initialized: `Kokkos::initialize(argc, argv);`
+- The kernel assumes `a` is captured by value in the lambda (scalar types are captured by value by default)
+
+**For completeness, here's a full example:**
+```cpp
+#include <Kokkos_Core.hpp>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    Kokkos::initialize(argc, argv);
+    {
+        int n = 1000;
+        double a = 2.5;
+        Kokkos::View<double*> x("x", n);
+        Kokkos::View<double*> y("y", n);
+        
+        // Initialize x and y (omitted for brevity)
+        
+        Kokkos::parallel_for("saxpy", n, KOKKOS_LAMBDA(int i) {
+            y[i] = a * x[i] + y[i];
+        });
+        
+        Kokkos::fence(); // Ensure kernel completion
+    }
+    Kokkos::finalize();
+    return 0;
+}
+```
+
+**Note:** The `KOKKOS_LAMBDA` macro works with CUDA and other backends. For complex device lambdas requiring explicit capture, use `[=] KOKKOS_FUNCTION`.
+
+### Answer
+
+Kokkos::parallel_for("saxpy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = a * x(i) + y(i);
+});
+
+
+## Index 1
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for reduction(+:sum)
+for (i = 0, i < n, i++) {
+  sum += x[i] * y[i];
+}
+
+
+### Response
+
+Here's the translation of your OpenMP code to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming x and y are Kokkos::View<double*> of size n
+double sum = 0.0;
+Kokkos::parallel_reduce("dot_product", n, 
+  KOKKOS_LAMBDA(int i, double& local_sum) {
+    local_sum += x(i) * y(i);
+  }, sum);
+```
+
+**Key differences explained:**
+
+1. **Header**: Kokkos requires including `Kokkos_Core.hpp`
+2. **Parallel construct**: `parallel_reduce` replaces `#pragma omp parallel for reduction`
+3. **Lambda syntax**: Uses `KOKKOS_LAMBDA` (or `KOKKOS_FUNCTION` for more complex cases)
+4. **Index access**: Uses parentheses `x(i)` instead of brackets `x[i]` for Kokkos Views
+5. **Reduction variable**: The reduction variable is passed as the last argument
+
+**If you need a complete working example:**
+
+```cpp
+#include <Kokkos_Core.hpp>
+#include <iostream>
+
+int main() {
+  Kokkos::initialize();
+  
+  const int n = 100;
+  Kokkos::View<double*> x("x", n);
+  Kokkos::View<double*> y("y", n);
+  
+  // Initialize views (example)
+  Kokkos::parallel_for("init", n, KOKKOS_LAMBDA(int i) {
+    x(i) = 1.0;
+    y(i) = 2.0;
+  });
+  
+  // Your translated code
+  double sum = 0.0;
+  Kokkos::parallel_reduce("dot_product", n, 
+    KOKKOS_LAMBDA(int i, double& local_sum) {
+      local_sum += x(i) * y(i);
+    }, sum);
+  
+  std::cout << "Result: " << sum << std::endl;
+  
+  Kokkos::finalize();
+  return 0;
+}
+```
+
+**Important notes:**
+- Kokkos must be initialized with `Kokkos::initialize()` and finalized with `Kokkos::finalize()`
+- The lambda capture must be empty (no `[&]` or `[=]`) for GPU compatibility
+- For performance, compile with Kokkos flags appropriate for your target architecture
+
+### Answer
+
+Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
+  update = x(i) * y(i);
+}, Kokkos::Sum<float>(sum));
+
+
+## Index 2
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for private(i, j, sum)
+for (i = 0; i < n; ++i) {
+  sum = 0.0;
+  for (j = 0; j < n; ++j) {
+    sum += A[i][j] * x[j];
+  }
+  y[i] = sum;
+}
+
+
+### Response
+
+Here's the OpenMP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming A, x, and y are Kokkos Views
+// A: Kokkos::View<double**, Kokkos::LayoutLeft> (n x n matrix)
+// x: Kokkos::View<double*> (n vector)
+// y: Kokkos::View<double*> (n vector)
+
+Kokkos::parallel_for("matrix_vector_multiply", 
+  Kokkos::RangePolicy<>(0, n), 
+  KOKKOS_LAMBDA(const int i) {
+    double sum = 0.0;
+    for (int j = 0; j < n; ++j) {
+      sum += A(i, j) * x(j);
+    }
+    y(i) = sum;
+  }
+);
+```
+
+Key changes:
+1. **Parallel construct**: `#pragma omp parallel for` → `Kokkos::parallel_for`
+2. **Loop policy**: `Kokkos::RangePolicy<>(0, n)` defines the iteration space
+3. **Kernel**: Uses `KOKKOS_LAMBDA` (or `KOKKOS_FUNCTION` for more complex cases)
+4. **Variable scope**: Loop variables `i` and `j` are automatically private in Kokkos
+5. **Memory access**: Uses `A(i, j)` instead of `A[i][j]` for Views
+
+**Important notes:**
+- Ensure Kokkos is initialized: `Kokkos::initialize(argc, argv);`
+- The Views must be accessible in the execution space (e.g., device memory for GPU execution)
+- For better performance on GPUs, consider using a team policy with nested parallelism for large `n`:
+  ```cpp
+  Kokkos::TeamPolicy<> policy(n, Kokkos::AUTO);
+  Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const TeamMember& team) {
+    int i = team.league_rank();
+    double sum = 0.0;
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, n),
+      [&](int j, double& local_sum) {
+        local_sum += A(i, j) * x(j);
+      }, sum);
+    y(i) = sum;
+  });
+  ```
+
+### Answer
+
+Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  float sum = 0.0f;
+  for (int j = 0; j < n; j++) {
+    sum += A(i,j) * x(j);
+  }
+  y(i) = sum;
+});
+
+
+## Index 3
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for private(i, j, l, sum)
+for (i = 0; i < m; ++i) {
+  for (j = 0; j < n; ++j) {
+    sum = 0.0;
+    for (int l = 0; l < k; l++) {
+      sum += a[i * lda + l] * b[l * ldb + j];
+    }
+    c[i * ldc + j] = alpha * sum + beta * c[i * ldc + j];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your OpenMP matrix multiplication code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming a, b, c are Kokkos::View<double**> with appropriate layouts
+// m, n, k are matrix dimensions
+// lda, ldb, ldc are leading dimensions (typically equal to n for row-major)
+// alpha, beta are scalar coefficients
+
+Kokkos::parallel_for("matrix_multiply", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {m, n}),
+  KOKKOS_LAMBDA(const int i, const int j) {
+    double sum = 0.0;
+    for (int l = 0; l < k; ++l) {
+      sum += a(i, l) * b(l, j);
+    }
+    c(i, j) = alpha * sum + beta * c(i, j);
+  }
+);
+```
+
+Key changes made:
+1. **Replaced OpenMP pragma** with `Kokkos::parallel_for`
+2. **Used MDRangePolicy** for the 2D iteration space (i, j loops)
+3. **Removed explicit indexing** - using View's operator() for cleaner access
+4. **Lambda capture** - all variables are captured by value by default in Kokkos lambdas
+
+If your data isn't already in `Kokkos::View` format, you'll need to wrap it:
+```cpp
+auto a_view = Kokkos::View<double**, Kokkos::LayoutLeft>("a", m, k);
+auto b_view = Kokkos::View<double**, Kokkos::LayoutLeft>("b", k, n);
+auto c_view = Kokkos::View<double**, Kokkos::LayoutLeft>("c", m, n);
+```
+
+Note: The layout (LayoutLeft/LayoutRight) should match your data's memory layout for optimal performance.
+
+### Answer
+
+Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, m}), KOKKOS_LAMBDA (const int i, const int j) {
+  float sum = 0.0f;
+  for (int l = 0; l < k; l++) {
+    sum += a(i,l) * b(l,j);
+  }
+  c(i, j) = alpha * sum + beta * c(i, j);
+ });
+
+
+## Index 4
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for shared(n, nnz, val, row, col, x, y) private(i, j)
+for (i = 0; i < n; i++) {
+  y[i] = 0.0;
+  for (j = row[i]; j < row[i + 1]; j++) {
+    y[i] += val[j] * x[col[j]];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your OpenMP sparse matrix-vector multiplication (CSR format) code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming these are Kokkos Views (adjust memory spaces as needed)
+Kokkos::View<double*> y("y", n);
+Kokkos::View<const double*> val("val", nnz);
+Kokkos::View<const int*> row("row", n+1);
+Kokkos::View<const int*> col("col", nnz);
+Kokkos::View<const double*> x("x", n);
+
+Kokkos::parallel_for("spmv", n, KOKKOS_LAMBDA(const int i) {
+    double sum = 0.0;
+    const int row_start = row(i);
+    const int row_end = row(i+1);
+    
+    for (int j = row_start; j < row_end; j++) {
+        sum += val(j) * x(col(j));
+    }
+    y(i) = sum;
+});
+```
+
+Key changes:
+1. **Parallel construct**: `parallel_for` replaces `#pragma omp parallel for`
+2. **Kernel**: Uses `KOKKOS_LAMBDA` (requires C++11+ and CUDA/HPX support) or `KOKKOS_FUNCTION` for functors
+3. **Indexing**: Uses `()` instead of `[]` for Kokkos Views
+4. **Private variables**: Local variables inside the lambda are private by design
+5. **Shared data**: All captured arrays are shared (by reference in the lambda)
+
+**Important notes**:
+- Ensure Kokkos is initialized: `Kokkos::initialize(argc, argv);`
+- Adjust memory spaces (e.g., `Kokkos::View<double*, Kokkos::HostSpace>`) if data isn't in default space
+- For better performance with irregular patterns like CSR, consider:
+  - Using `Kokkos::RangePolicy` explicitly
+  - Adding `Kokkos::Experimental::require` for execution space traits
+  - Using hierarchical parallelism for large matrices
+
+**Complete example with initialization**:
+```cpp
+#include <Kokkos_Core.hpp>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    Kokkos::initialize(argc, argv);
+    {
+        // Your allocation and initialization code here
+        // ... (create val, row, col, x views)
+        
+        // The parallel loop
+        Kokkos::parallel_for("spmv", n, KOKKOS_LAMBDA(const int i) {
+            double sum = 0.0;
+            for (int j = row(i); j < row(i+1); j++) {
+                sum += val(j) * x(col(j));
+            }
+            y(i) = sum;
+        });
+        
+        Kokkos::fence(); //
+
+### Answer
+
+Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = 0.0;
+  for (int j = row(i); j < row(i + 1); ++j) {
+    y(i) += val(j) * x(col(j));
+  }
+});
+
+
+## Index 5
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for
+for (int col = 0; i < num_cols; col++) {
+  for (int i = col_ptr[col]; i < col_ptr[col+1]; i++) {
+    y[row_ind[i]] += values[i] * x[col];
+  }
+}
+
+
+### Response
+
+Here's the OpenMP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming the arrays are Kokkos Views
+// Example: Kokkos::View<double*> y, x, values;
+//          Kokkos::View<int*> row_ind, col_ptr;
+
+Kokkos::parallel_for("spmv_csc", num_cols, KOKKOS_LAMBDA(const int col) {
+  for (int i = col_ptr[col]; i < col_ptr[col+1]; i++) {
+    Kokkos::atomic_add(&y[row_ind[i]], values[i] * x[col]);
+  }
+});
+```
+
+**Key changes:**
+1. **Parallel policy**: `Kokkos::parallel_for` replaces `#pragma omp parallel for`
+2. **Lambda syntax**: Uses `KOKKOS_LAMBDA` (or `KOKKOS_LAMBDA` for device code)
+3. **Atomic operation**: Added `Kokkos::atomic_add` to handle potential race conditions when multiple threads write to the same `y` element (same as OpenMP's implicit atomicity for reduction)
+
+**Important notes:**
+- Ensure all arrays (`y`, `x`, `values`, `row_ind`, `col_ptr`) are Kokkos Views accessible in the execution space
+- The loop bounds use `num_cols` (corrected from `i < num_cols` in your original code)
+- For performance, consider using a hierarchical parallelism approach if the inner loop lengths vary significantly
+- Initialize Kokkos with `Kokkos::initialize()` before running this code
+
+**Alternative without atomics** (if data allows):
+If you can guarantee no two threads write to the same `y` element, remove `atomic_add`:
+```cpp
+y[row_ind[i]] += values[i] * x[col];
+```
+
+### Answer
+
+Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
+  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
+    y(row_ind(i)) += values(i) * x(col);
+  }
+});
+
+
+## Index 6
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for shared(n, u, u_new) private(i)
+for (i = 1; i < n-1; i++) {
+  u_new[i] = 0.5 * (u[i-1] + u[i+1]) - u[i];
+}
+
+
+### Response
+
+Here's the OpenMP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u and u_new are Kokkos::View<double*>
+Kokkos::parallel_for("stencil_computation", n-2, KOKKOS_LAMBDA(int i) {
+    int idx = i + 1;  // Adjust index since loop starts at 1
+    u_new[idx] = 0.5 * (u[idx-1] + u[idx+1]) - u[idx];
+});
+```
+
+Key changes made:
+1. **Removed OpenMP pragma** and replaced with `Kokkos::parallel_for`
+2. **Added execution policy name** ("stencil_computation") for profiling/debugging
+3. **Adjusted loop bounds**: The Kokkos loop runs from 0 to n-3 (total n-2 iterations), with index adjustment inside
+4. **Used KOKKOS_LAMBDA** for device compatibility (requires C++11 or later)
+5. **Removed explicit shared/private clauses** - Kokkos captures variables automatically in the lambda
+
+If you need to run this on different execution spaces (GPU, etc.), you can add an execution policy:
+```cpp
+Kokkos::parallel_for(Kokkos::RangePolicy<>(1, n-1), KOKKOS_LAMBDA(int i) {
+    u_new[i] = 0.5 * (u[i-1] + u[i+1]) - u[i];
+});
+```
+
+This version uses `RangePolicy` to specify the exact bounds (1 to n-1, exclusive), matching the original OpenMP loop exactly.
+
+### Answer
+
+Kokkos::parallel_for("stencil", Kokkos::RangePolicy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  u_new(i) = 0.5 * (u(i-1) + u(i+1)) - u(i);
+});
+
+
+## Index 7
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for shared(n, u, u_new) private(i,j) collapse(2)
+for (i = 1; i < n-1; i++) {
+  for (j = 1; j < n-1; j++) {
+    u_new[i,j] = (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j]) * 0.25;
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your OpenMP code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u, u_new, and f are Kokkos Views
+// Example View declarations (adjust layouts as needed):
+// using View2D = Kokkos::View<double**, Kokkos::LayoutRight>;
+// View2D u("u", n, n), u_new("u_new", n, n), f("f", n, n);
+
+Kokkos::parallel_for("stencil_update", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}),
+  KOKKOS_LAMBDA(const int i, const int j) {
+    u_new(i, j) = (u(i-1, j) + u(i, j+1) + u(i, j-1) + u(i+1, j) + f(i, j)) * 0.25;
+  }
+);
+```
+
+Key changes:
+1. **Parallel construct**: `#pragma omp parallel for` → `Kokkos::parallel_for`
+2. **Loop collapse**: `collapse(2)` → `MDRangePolicy<Kokkos::Rank<2>>`
+3. **Index bounds**: Explicit range `{1, 1}` to `{n-1, n-1}`
+4. **Lambda syntax**: `KOKKOS_LAMBDA` replaces the loop body
+5. **Array access**: `u[i][j]` → `u(i, j)` (Kokkos View access)
+
+**Important notes**:
+- Ensure `Kokkos::initialize()` has been called
+- Adjust memory layouts (`LayoutLeft`/`LayoutRight`) based on your access patterns
+- The execution space (default or specified) determines where the kernel runs (CPU/GPU)
+- Add `Kokkos::fence()` if synchronization is needed after the kernel
+
+For optimal performance, consider:
+- Using team policies for more complex nested parallelism
+- Tuning tile sizes in `MDRangePolicy` (via `Kokkos::Tile` parameter)
+- Ensuring data is in the correct memory space for the execution device
+
+### Answer
+
+Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
+  u_new(i,j) = (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j)) * 0.25;
+});
+
+
+## Index 8
+
+### Context
+
+OpenMP to Kokkos translation
+
+
+### Question
+
+Can you translate this OpenMP code to Kokkos?
+#pragma omp parallel for shared(n, u, u_new) private(i,j,k) collapse(3)
+for (i = 1; i < n-1; i++) {
+  for (j = 1; j < n-1; j++) {
+    for (k = 1; k < n-1; k++) {
+      u_new[i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
+    }
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your OpenMP code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u, u_new, and f are Kokkos::Views
+// with appropriate memory spaces and layouts
+
+Kokkos::parallel_for("stencil_3d",
+  Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}),
+  KOKKOS_LAMBDA(int i, int j, int k) {
+    u_new(i, j, k) = 0.125 * (
+      u(i-1, j, k) + u(i, j+1, k) + u(i, j-1, k) +
+      u(i+1, j, k) + u(i, j, k-1) + u(i, j, k+1) +
+      f(i, j, k) * dx * dy * dz
+    );
+  }
+);
+```
+
+Key changes:
+1. **Policy**: Uses `MDRangePolicy<Rank<3>>` for 3D iteration space
+2. **Bounds**: Takes start (inclusive) and end (exclusive) indices
+3. **Indexing**: Uses `()` instead of `[][]` for multi-dimensional Views
+4. **Lambda**: Uses `KOKKOS_LAMBDA` for device execution
+5. **Naming**: Optional kernel name for profiling
+
+**Prerequisites:**
+- Ensure `Kokkos::initialize()` has been called
+- Views must be properly allocated (e.g., `Kokkos::View<double***>`)
+- The memory space (e.g., `Kokkos::CudaSpace`) must match your execution space
+
+**Note:** For optimal performance, consider:
+- Using appropriate memory layouts (`LayoutLeft`/`LayoutRight`)
+- Adding execution space template parameter if needed
+- Adjusting tile sizes in MDRangePolicy for your architecture
+
+### Answer
+
+Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
+  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+});
+
+
+## Index 9
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void saxpy (int n, float a, const float *x, float *y) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    y[i] = a * x[i] + y[i];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your HIP saxpy kernel:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+struct SaxpyFunctor {
+  int n;
+  float a;
+  Kokkos::View<const float*> x;
+  Kokkos::View<float*> y;
+
+  SaxpyFunctor(int n_, float a_, 
+               Kokkos::View<const float*> x_, 
+               Kokkos::View<float*> y_)
+    : n(n_), a(a_), x(x_), y(y_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i) const {
+    if (i < n) {
+      y(i) = a * x(i) + y(i);
+    }
+  }
+};
+
+// Usage example:
+void saxpy_kokkos(int n, float a, 
+                  Kokkos::View<const float*> x,
+                  Kokkos::View<float*> y) {
+  Kokkos::parallel_for("saxpy", n, SaxpyFunctor(n, a, x, y));
+}
+```
+
+Or using a lambda expression (requires C++11 or later):
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+void saxpy_kokkos_lambda(int n, float a,
+                         Kokkos::View<const float*> x,
+                         Kokkos::View<float*> y) {
+  Kokkos::parallel_for("saxpy", n,
+    KOKKOS_LAMBDA(const int i) {
+      if (i < n) {
+        y(i) = a * x(i) + y(i);
+      }
+    }
+  );
+}
+```
+
+Key changes from HIP to Kokkos:
+1. **Execution Space**: Kokkos automatically selects the best execution space (CUDA, HIP, OpenMP, etc.) based on your configuration
+2. **Memory Views**: `Kokkos::View` replaces raw pointers, handling memory management across different memory spaces
+3. **Parallel Dispatch**: `parallel_for` replaces the `<<<grid, block>>>` syntax
+4. **Indexing**: Direct 1D indexing replaces the manual `blockIdx.x * blockDim.x + threadIdx.x` calculation
+5. **Functor/Lambda**: The computation is encapsulated in a functor or lambda
+
+To use this in a complete program:
+```cpp
+int main() {
+  Kokkos::initialize();
+  {
+    int n = 1000000;
+    float a = 2.0f;
+    
+    Kokkos::View<float*> x("x", n);
+    Kokkos::View<float*> y("y", n);
+    
+    // Initialize x and y here...
+    
+    saxpy_kokkos(n, a, x, y);
+    
+    Kokkos::fence(); // Ensure kernel completion
+  }
+  Kokkos::finalize();
+  return 0;
+}
+```
+
+The Kokkos version will run on any
+
+### Answer
+
+Kokkos::parallel_for("saxpy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = a * x(i) + y(i);
+});
+
+
+## Index 10
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void sdot(int n, float *x, float *y, float *sum) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  float update = 0.0;
+  if (i < n) {
+    update = x[i] * y[i];
+  }
+  atomicAdd(sum, update);
+}
+
+
+### Response
+
+Here's the Kokkos translation of your HIP code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Using a functor for better performance and flexibility
+struct SdotFunctor {
+  int n;
+  Kokkos::View<float*> x;
+  Kokkos::View<float*> y;
+  Kokkos::View<float> sum;  // Scalar view for the result
+
+  SdotFunctor(int n_, Kokkos::View<float*> x_, Kokkos::View<float*> y_, 
+              Kokkos::View<float> sum_)
+    : n(n_), x(x_), y(y_), sum(sum_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i, float& local_sum) const {
+    if (i < n) {
+      local_sum += x(i) * y(i);
+    }
+  }
+};
+
+// Wrapper function that uses parallel_reduce for the dot product
+void sdot_kokkos(int n, Kokkos::View<float*> x, Kokkos::View<float*> y, 
+                 Kokkos::View<float> sum) {
+  // Reset sum to 0
+  Kokkos::deep_copy(sum, 0.0f);
+  
+  // Perform parallel reduction
+  float result;
+  Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), 
+    KOKKOS_LAMBDA(const int i, float& local_sum) {
+      if (i < n) {
+        local_sum += x(i) * y(i);
+      }
+    }, result);
+  
+  // Copy result back to device view
+  Kokkos::deep_copy(sum, result);
+}
+
+// Alternative version using atomic_add (closer to original HIP)
+void sdot_kokkos_atomic(int n, Kokkos::View<float*> x, Kokkos::View<float*> y, 
+                        Kokkos::View<float> sum) {
+  // Reset sum to 0
+  Kokkos::deep_copy(sum, 0.0f);
+  
+  // Parallel for with atomic add
+  Kokkos::parallel_for("sdot_atomic", Kokkos::RangePolicy<>(0, n), 
+    KOKKOS_LAMBDA(const int i) {
+      if (i < n) {
+        Kokkos::atomic_add(&sum(), x(i) * y(i));
+      }
+    });
+}
+```
+
+**Key differences and explanations:**
+
+1. **Kokkos Views**: Instead of raw pointers, Kokkos uses `View` objects that manage memory and track data dependencies.
+
+2. **Parallel Reduction**: The recommended approach for dot products in Kokkos is `parallel_reduce`, which is more efficient than atomic operations. The first version uses this approach.
+
+3. **Atomic Version**: The `sdot_kokkos_atomic` function closely mimics the original HIP code using `Kokkos::atomic_add`.
+
+4
+
+### Answer
+
+Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
+  update = x(i) * y(i);
+}, Kokkos::Sum<float>(sum));
+
+
+## Index 11
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void sgemv(int n, const float* A, const float* x, float* y) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    float sum = 0.0f;
+    for (int j = 0; j < n; ++j) {
+      sum += A[i * n + j] * x[j];
+    }
+    y[i] = sum;
+  }
+}
+
+
+### Response
+
+Here's the HIP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Kokkos version using a parallel_for with TeamPolicy
+void sgemv_kokkos(int n, const float* A, const float* x, float* y) {
+    // Create Kokkos views from raw pointers (assuming device memory)
+    Kokkos::View<const float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> A_view(A, n * n);
+    Kokkos::View<const float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> x_view(x, n);
+    Kokkos::View<float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> y_view(y, n);
+    
+    // Get the execution space (defaults to the default device)
+    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    
+    // Parallel execution over rows
+    Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<ExecSpace>(0, n),
+        KOKKOS_LAMBDA(const int i) {
+            float sum = 0.0f;
+            for (int j = 0; j < n; ++j) {
+                sum += A_view[i * n + j] * x_view[j];
+            }
+            y_view[i] = sum;
+        }
+    );
+}
+
+// Alternative version using TeamPolicy for potential optimization
+void sgemv_kokkos_team(int n, const float* A, const float* x, float* y) {
+    Kokkos::View<const float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> A_view(A, n * n);
+    Kokkos::View<const float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> x_view(x, n);
+    Kokkos::View<float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> y_view(y, n);
+    
+    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
+    
+    // Configure team size (similar to blockDim.x in HIP)
+    int team_size = 256;  // Can be tuned
+    TeamPolicy policy(n, team_size);
+    
+    Kokkos::parallel_for("sgemv_team", policy,
+        KOKKOS_LAMBDA(const TeamMember& team) {
+            int i = team.league_rank();
+            
+            float sum = 0.0f;
+            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, n),
+                [&](const int j, float& local_sum) {
+                    local_sum += A_view[i * n + j] * x_view[j];
+                }, sum);
+            
+            if (team.team_rank
+
+### Answer
+
+Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  float sum = 0.0f;
+  for (int j = 0; j < n; j++) {
+    sum += A(i,j) * x(j);
+  }
+  y(i) = sum;
+});
+
+
+## Index 12
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?__global__ void sgemm(int m, int n, int k, double alpha, const double *a, int lda, const double *b, int ldb, double beta, double *c, int ldc) {
+  int i = blockIdx.y * blockDim.y + threadIdx.y;
+  int j = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < m && j < n) {
+    double temp = 0.0;
+    for (int l = 0; l < k; ++l) {      temp += a[i * lda + l] * b[l * ldb + j];
+    }
+    c[i * ldc + j] = alpha * temp + beta * c[i * ldc + j];
+  }
+}
+
+
+### Response
+
+Here's the HIP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+void sgemm_kokkos(int m, int n, int k, double alpha, 
+                  const double* a, int lda, 
+                  const double* b, int ldb, 
+                  double beta, double* c, int ldc) {
+    
+    // Create Kokkos views from raw pointers
+    Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> A(a, m, k);
+    Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> B(b, k, n);
+    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> C(c, m, n);
+    
+    // Parallel execution using MDRangePolicy for 2D iteration
+    Kokkos::parallel_for("sgemm", 
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {m, n}),
+        KOKKOS_LAMBDA(int i, int j) {
+            double temp = 0.0;
+            for (int l = 0; l < k; ++l) {
+                temp += A(i, l) * B(l, j);
+            }
+            C(i, j) = alpha * temp + beta * C(i, j);
+        }
+    );
+}
+```
+
+**Key changes made:**
+
+1. **Memory Views**: Converted raw pointers to `Kokkos::View` objects with appropriate layouts
+2. **Execution Policy**: Used `MDRangePolicy<Rank<2>>` for 2D parallel execution (replacing the 2D grid/block structure)
+3. **Indexing**: Changed from manual index calculation (`i*lda + l`) to view indexing (`A(i, l)`)
+4. **Lambda**: Used `KOKKOS_LAMBDA` for the kernel function
+5. **Layout**: Assumed `LayoutRight` (row-major) to match typical C-style arrays
+
+**Note:** If your matrices use column-major layout (like Fortran), change `LayoutRight` to `LayoutLeft`. Also, you may need to adjust the memory space (e.g., `Kokkos::CudaSpace` for GPU) based on your execution device.
+
+For better performance with larger matrices, consider:
+- Using tiled/blocked algorithms
+- Adding team policies for hierarchical parallelism
+- Using `Kokkos::parallel_reduce` for the inner dot product
+
+### Answer
+
+Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, m}), KOKKOS_LAMBDA (const int i, const int j) {
+  float sum = 0.0f;
+  for (int l = 0; l < k; l++) {
+    sum += a(i,l) * b(l,j);
+  }
+  c(i, j) = alpha * sum + beta * c(i, j);
+ });
+
+
+## Index 13
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void spmv(int n, int nnz, const float *val, const int *row, const int *col, const float *x, float *y) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    for (int j = row[i]; j < row[i + 1]; ++j) {
+      y[i] += val[j] * x[col[j]];
+    }
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your HIP SpMV kernel:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Functor version (recommended for performance)
+struct SpmvFunctor {
+  int n;
+  Kokkos::View<const float*> val;
+  Kokkos::View<const int*> row;
+  Kokkos::View<const int*> col;
+  Kokkos::View<const float*> x;
+  Kokkos::View<float*> y;
+
+  SpmvFunctor(int n_, Kokkos::View<const float*> val_,
+              Kokkos::View<const int*> row_, Kokkos::View<const int*> col_,
+              Kokkos::View<const float*> x_, Kokkos::View<float*> y_)
+      : n(n_), val(val_), row(row_), col(col_), x(x_), y(y_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i) const {
+    if (i < n) {
+      float sum = 0.0f;
+      for (int j = row(i); j < row(i + 1); ++j) {
+        sum += val(j) * x(col(j));
+      }
+      y(i) += sum;  // Note: This does atomic add for thread safety
+    }
+  }
+};
+
+// Lambda version (C++11 or later)
+void spmv_kokkos_lambda(int n, int nnz,
+                        Kokkos::View<const float*> val,
+                        Kokkos::View<const int*> row,
+                        Kokkos::View<const int*> col,
+                        Kokkos::View<const float*> x,
+                        Kokkos::View<float*> y) {
+  Kokkos::parallel_for("spmv", n, KOKKOS_LAMBDA(const int i) {
+    if (i < n) {
+      float sum = 0.0f;
+      for (int j = row(i); j < row(i + 1); ++j) {
+        sum += val(j) * x(col(j));
+      }
+      Kokkos::atomic_add(&y(i), sum);
+    }
+  });
+}
+
+// Usage example
+void example_usage() {
+  // Initialize Kokkos
+  Kokkos::initialize();
+  
+  // Create views (example sizes)
+  int n = 1000;
+  int nnz = 5000;
+  
+  Kokkos::View<float*> val("val", nnz);
+  Kokkos::View<int*> row("row", n + 1);
+  Kokkos::View<int*> col("col", nnz);
+  Kokkos::View<float*> x("x", n);
+  Kokkos::View<float*> y("y", n);
+  
+  // Fill your data here...
+  
+  // Using functor version
+  Kokkos::parallel_for("spmv", n, SpmvFunctor
+
+### Answer
+
+Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = 0.0;
+  for (int j = row(i); j < row(i + 1); ++j) {
+    y(i) += val(j) * x(col(j));
+  }
+});
+
+
+## Index 14
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void spmv_csc (int num_cols, int* col_ptr, int* row_index, float *x, float *y, float *values) {
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+  if (col < num_cols) {
+    for (int i = col_ptr[col]; i < col_ptr[col + 1]; ++i) {
+      y[row_ind[i]] += values[i] * x[col];
+    }
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your HIP SpMV CSC kernel:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Functor version (recommended for performance)
+struct SpmvCscFunctor {
+  int num_cols;
+  Kokkos::View<int*> col_ptr;
+  Kokkos::View<int*> row_index;
+  Kokkos::View<float*> x;
+  Kokkos::View<float*> y;
+  Kokkos::View<float*> values;
+
+  SpmvCscFunctor(int num_cols_, Kokkos::View<int*> col_ptr_,
+                 Kokkos::View<int*> row_index_, Kokkos::View<float*> x_,
+                 Kokkos::View<float*> y_, Kokkos::View<float*> values_)
+      : num_cols(num_cols_),
+        col_ptr(col_ptr_),
+        row_index(row_index_),
+        x(x_),
+        y(y_),
+        values(values_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int col) const {
+    if (col < num_cols) {
+      const int start = col_ptr[col];
+      const int end = col_ptr[col + 1];
+      const float x_val = x[col];
+      
+      for (int i = start; i < end; ++i) {
+        // Atomic update for potential race conditions
+        Kokkos::atomic_add(&y[row_index[i]], values[i] * x_val);
+      }
+    }
+  }
+};
+
+// Lambda version (C++11 or later)
+void spmv_csc_kokkos_lambda(int num_cols, Kokkos::View<int*> col_ptr,
+                            Kokkos::View<int*> row_index, Kokkos::View<float*> x,
+                            Kokkos::View<float*> y, Kokkos::View<float*> values) {
+  Kokkos::parallel_for("spmv_csc", num_cols, KOKKOS_LAMBDA(const int col) {
+    if (col < num_cols) {
+      const int start = col_ptr[col];
+      const int end = col_ptr[col + 1];
+      const float x_val = x[col];
+      
+      for (int i = start; i < end; ++i) {
+        Kokkos::atomic_add(&y[row_index[i]], values[i] * x_val);
+      }
+    }
+  });
+}
+
+// Usage example
+void example_usage() {
+  // Initialize Kokkos
+  Kokkos::initialize();
+  
+  // Create views (device memory)
+  int num_cols = 1000;
+  Kokkos::View<int*> col_ptr("col_ptr", num_cols + 1);
+  Kokkos::View<int*> row_index("row_index", /* nnz */ 5000);
+  Kokkos::View<float*> x("x", num_cols);
+  Kokkos::View<float*> y
+
+### Answer
+
+Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
+  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
+    y(row_ind(i)) += values(i) * x(col);
+  }
+});
+
+
+## Index 15
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void stencil (int n, const float *u, float *u_new) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i > 0 && i < n - 1) {
+    u_new[i] = 0.5 * (u[i-1] + u[i+1]) - u[i];
+  }
+}
+
+
+### Response
+
+Here's the HIP code translated to Kokkos:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+struct StencilFunctor {
+  int n;
+  Kokkos::View<const float*> u;
+  Kokkos::View<float*> u_new;
+  
+  StencilFunctor(int n_, Kokkos::View<const float*> u_, Kokkos::View<float*> u_new_)
+    : n(n_), u(u_), u_new(u_new_) {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i) const {
+    if (i > 0 && i < n - 1) {
+      u_new(i) = 0.5f * (u(i-1) + u(i+1)) - u(i);
+    }
+  }
+};
+
+void stencil_kokkos(int n, Kokkos::View<const float*> u, Kokkos::View<float*> u_new) {
+  Kokkos::parallel_for("stencil", n, StencilFunctor(n, u, u_new));
+}
+```
+
+Or using a lambda expression (requires C++11 or later):
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+void stencil_kokkos(int n, Kokkos::View<const float*> u, Kokkos::View<float*> u_new) {
+  Kokkos::parallel_for("stencil", n, KOKKOS_LAMBDA(int i) {
+    if (i > 0 && i < n - 1) {
+      u_new(i) = 0.5f * (u(i-1) + u(i+1)) - u(i);
+    }
+  });
+}
+```
+
+Key changes:
+1. Replaced `__global__` with a functor or lambda
+2. Replaced pointer arithmetic with `Kokkos::View` indexing
+3. Replaced thread/block indexing with simple loop index `i`
+4. Added `KOKKOS_INLINE_FUNCTION` decorator for device code
+5. Used `Kokkos::parallel_for` instead of kernel launch syntax
+6. Added explicit kernel name "stencil" for profiling
+
+The Kokkos version will automatically run on the default execution space (CPU, GPU, etc.) based on how Kokkos was configured.
+
+### Answer
+
+Kokkos::parallel_for("stencil", Kokkos::RangePolicy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  u_new(i) = 0.5 * (u(i-1) + u(i+1)) - u(i);
+});
+
+
+## Index 16
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void stencil_2d (int n, float dx, float dy, float *u, float *u_new, float *f) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  if ( i > 0 && i < n-1 && j > 0 && j < n-1){
+    u_new [i][j] = 0.25 * (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j]);
+  }
+}
+
+
+### Response
+
+To translate this HIP code to Kokkos, we need to convert the 2D grid/block indexing to Kokkos' parallel dispatch and handle the 2D array access patterns. Here's the equivalent Kokkos code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+struct Stencil2DFunctor {
+    int n;
+    float dx, dy;
+    Kokkos::View<float**, Kokkos::LayoutLeft> u, u_new, f;
+
+    Stencil2DFunctor(int n_, float dx_, float dy_,
+                     Kokkos::View<float**, Kokkos::LayoutLeft> u_,
+                     Kokkos::View<float**, Kokkos::LayoutLeft> u_new_,
+                     Kokkos::View<float**, Kokkos::LayoutLeft> f_)
+        : n(n_), dx(dx_), dy(dy_), u(u_), u_new(u_new_), f(f_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i, const int j) const {
+        if (i > 0 && i < n-1 && j > 0 && j < n-1) {
+            u_new(i, j) = 0.25f * (u(i-1, j) + u(i, j+1) + 
+                                   u(i, j-1) + u(i+1, j) + f(i, j));
+        }
+    }
+};
+
+void stencil_2d_kokkos(int n, float dx, float dy,
+                       Kokkos::View<float**, Kokkos::LayoutLeft> u,
+                       Kokkos::View<float**, Kokkos::LayoutLeft> u_new,
+                       Kokkos::View<float**, Kokkos::LayoutLeft> f) {
+    
+    // Create a 2D range policy for the interior points
+    Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({1, 1}, {n-1, n-1});
+    
+    // Execute the parallel kernel
+    Kokkos::parallel_for("stencil_2d", policy, 
+        Stencil2DFunctor(n, dx, dy, u, u_new, f));
+    
+    // Optional: Add a fence if needed for synchronization
+    // Kokkos::fence();
+}
+```
+
+Key changes made:
+
+1. **Functor-based approach**: Kokkos uses functors (structs/classes with `operator()`) to encapsulate the kernel logic.
+
+2. **2D Views**: Replaced raw pointers with `Kokkos::View<float**>` for 2D arrays. The `LayoutLeft` corresponds to row-major layout (similar to C-style `[i][j]` indexing).
+
+3. **MDRangePolicy**: Uses a 2D range policy to iterate over the grid. The range `{1, 1}` to `{n-1, n-
+
+### Answer
+
+Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
+  u_new(i,j) = (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j)) * 0.25;
+});
+
+
+## Index 17
+
+### Context
+
+HIP to Kokkos translation
+
+
+### Question
+
+Can you translate this HIP code to Kokkos?
+__global__ void stencil_3d (int n, float dx, float dy, float dz, float *u, float *u_new, float *f) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+ int k = blockIdx.z * blockDim.z + threadIdx.z;
+  if ( i > 0 && i < n-1 && j > 0 && j < n-1 && k > 0 && k < n - 1){
+    u_new [i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your HIP stencil kernel:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Kokkos version of the 3D stencil kernel
+struct Stencil3D {
+    int n;
+    float dx, dy, dz;
+    Kokkos::View<float***> u;
+    Kokkos::View<float***> u_new;
+    Kokkos::View<float***> f;
+    
+    Stencil3D(int n_, float dx_, float dy_, float dz_,
+              Kokkos::View<float***> u_,
+              Kokkos::View<float***> u_new_,
+              Kokkos::View<float***> f_)
+        : n(n_), dx(dx_), dy(dy_), dz(dz_), u(u_), u_new(u_new_), f(f_) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i, const int j, const int k) const {
+        if (i > 0 && i < n-1 && j > 0 && j < n-1 && k > 0 && k < n-1) {
+            u_new(i, j, k) = 0.125f * (u(i-1, j, k) + u(i, j+1, k) + 
+                                       u(i, j-1, k) + u(i+1, j, k) + 
+                                       u(i, j, k-1) + u(i, j, k+1) + 
+                                       f(i, j, k) * dx * dy * dz);
+        }
+    }
+};
+
+// Function to launch the kernel
+void launch_stencil_3d(int n, float dx, float dy, float dz,
+                       Kokkos::View<float***> u,
+                       Kokkos::View<float***> u_new,
+                       Kokkos::View<float***> f) {
+    
+    // Create a 3D range policy
+    Kokkos::MDRangePolicy<Kokkos::Rank<3>> policy({0, 0, 0}, {n, n, n});
+    
+    // Launch the kernel
+    Kokkos::parallel_for("stencil_3d", policy, Stencil3D(n, dx, dy, dz, u, u_new, f));
+}
+```
+
+Key changes in the translation:
+
+1. **Kokkos Views**: Replaced raw pointers with `Kokkos::View<float***>` for 3D arrays
+2. **Functor pattern**: Used a functor class with `operator()` instead of a `__global__` function
+3. **Indexing**: Changed from `[i][j][k]` to `(i, j, k)` syntax for Views
+4. **Parallel dispatch**: Used `Kokkos::parallel_for` with an `MDRangePolicy` instead of HIP kernel
+
+### Answer
+
+Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
+  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+});
+
+
+## Index 18
+
+### Context
+
+Sequential to Kokkos parallelization
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 0, i < n, i++) {
+  y[i] = a * x[i] + y[i];
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your sequential code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// ... (in your main or function)
+
+Kokkos::parallel_for("saxpy", n, KOKKOS_LAMBDA(const int i) {
+    y(i) = a * x(i) + y(i);
+});
+```
+
+Key changes made:
+1. **Parallel construct**: Replaced the `for` loop with `Kokkos::parallel_for`
+2. **Kernel name**: Added `"saxpy"` for profiling/debugging
+3. **Lambda function**: Used `KOKKOS_LAMBDA` to define the parallel operation
+4. **Index access**: Changed `[]` to `()` for Kokkos View access (assuming `x` and `y` are `Kokkos::View` types)
+
+**Important prerequisites:**
+- Initialize Kokkos: `Kokkos::initialize(argc, argv);`
+- `x` and `y` must be `Kokkos::View` types (e.g., `Kokkos::View<double*> x("x", n);`)
+- Include Kokkos headers and link against Kokkos library
+- Finalize Kokkos: `Kokkos::finalize();`
+
+**Alternative with explicit execution policy:**
+```cpp
+Kokkos::parallel_for(Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+    y(i) = a * x(i) + y(i);
+});
+```
+
+This will execute the SAXPY operation in parallel across available compute resources (CPU threads, GPU threads, etc.) based on your Kokkos configuration.
+
+### Answer
+
+Kokkos::parallel_for("saxpy", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = a * x(i) + y(i);
+});
+
+
+## Index 19
+
+### Context
+
+Sequential to Kokkos parallelization
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 0, i < n, i++) {
+  sum += x[i] * y[i];
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your dot product code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming x and y are Kokkos::View<double*> with size n
+Kokkos::View<double*> x("x", n);
+Kokkos::View<double*> y("y", n);
+double sum = 0;
+
+// Parallel reduction using Kokkos
+Kokkos::parallel_reduce("dot_product", n,
+  KOKKOS_LAMBDA(int i, double& local_sum) {
+    local_sum += x(i) * y(i);
+  }, sum);
+
+// sum now contains the dot product result
+```
+
+Key changes:
+1. **Kokkos Views**: Uses `Kokkos::View` for data management (assumes you've already allocated/filled these)
+2. **parallel_reduce**: Kokkos' parallel reduction pattern that:
+   - Automatically handles thread-safe accumulation
+   - Combines partial sums from parallel threads
+   - Uses the specified lambda as the kernel
+3. **Lambda function**: Each thread processes its portion and accumulates to a local sum
+4. **Thread safety**: The reduction is handled automatically by Kokkos
+
+If you need to run this on different hardware (GPU, CPU, etc.), initialize Kokkos appropriately:
+```cpp
+Kokkos::initialize(argc, argv);
+// ... your code ...
+Kokkos::finalize();
+```
+
+The code will automatically use the execution space specified during Kokkos initialization (e.g., `Kokkos::Cuda` for NVIDIA GPUs).
+
+### Answer
+
+Kokkos::parallel_reduce("sdot", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i, float &update) {
+  update = x(i) * y(i);
+}, Kokkos::Sum<float>(sum));
+
+
+## Index 20
+
+### Context
+
+Sequential to Kokkos parallelization
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 0; i < n; ++i) {
+  sum = 0.0;
+  for (j = 0; j < n; ++j) {
+    sum += A[i][j] * x[j];
+  }
+  y[i] = sum;
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your matrix-vector multiplication code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming A is a 2D Kokkos View, x and y are 1D Kokkos Views
+// n is the size of the vectors/matrix dimension
+
+// Parallel version using Kokkos
+Kokkos::parallel_for("matrix_vector_mult", n, KOKKOS_LAMBDA(const int i) {
+    double sum = 0.0;
+    for (int j = 0; j < n; ++j) {
+        sum += A(i, j) * x(j);
+    }
+    y(i) = sum;
+});
+```
+
+Key changes made:
+
+1. **Kokkos parallel_for**: Replaces the outer loop with a parallel execution construct
+2. **Kokkos Views**: Uses `A(i, j)` instead of `A[i][j]` (assuming A is a 2D Kokkos View)
+3. **Lambda function**: Uses `KOKKOS_LAMBDA` to define the parallel kernel
+4. **Indexing**: Uses parentheses `()` for View access instead of brackets `[][]`
+
+If you need to handle different memory spaces or layouts, you might need additional modifications. Here's a more complete example with memory allocation:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+int main(int argc, char* argv[]) {
+    Kokkos::initialize(argc, argv);
+    {
+        int n = 1000;
+        
+        // Allocate Views
+        Kokkos::View<double**> A("A", n, n);
+        Kokkos::View<double*> x("x", n);
+        Kokkos::View<double*> y("y", n);
+        
+        // Initialize A and x (example initialization)
+        Kokkos::parallel_for("init", n, KOKKOS_LAMBDA(const int i) {
+            x(i) = 1.0;
+            for (int j = 0; j < n; ++j) {
+                A(i, j) = 1.0;
+            }
+        });
+        
+        // Matrix-vector multiplication
+        Kokkos::parallel_for("matrix_vector_mult", n, KOKKOS_LAMBDA(const int i) {
+            double sum = 0.0;
+            for (int j = 0; j < n; ++j) {
+                sum += A(i, j) * x(j);
+            }
+            y(i) = sum;
+        });
+        
+        // Optional: Synchronize if needed
+        Kokkos::fence();
+    }
+    Kokkos::finalize();
+    return 0;
+}
+```
+
+**Important notes:**
+- The inner `j` loop remains sequential within each parallel thread
+- For better performance on GPUs, consider using a team policy for nested parallelism
+- Make sure to compile with Kokkos flags
+
+### Answer
+
+Kokkos::parallel_for("sgemv", Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+  float sum = 0.0f;
+  for (int j = 0; j < n; j++) {
+    sum += A(i,j) * x(j);
+  }
+  y(i) = sum;
+});
+
+
+## Index 21
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 0; i < m; ++i) {
+  for (j = 0; j < n; ++j) {
+    sum = 0.0;
+    for (int l = 0; l < k; l++) {
+      sum += a[i * lda + l] * b[l * ldb + j];
+    }
+    c[i * ldc + j] = alpha * sum + beta * c[i * ldc + j];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your sequential matrix multiplication code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming a, b, c are Kokkos Views with appropriate layouts
+// Example View declarations (adjust based on your actual data layout):
+// using View2D = Kokkos::View<double**, Kokkos::LayoutLeft>;
+// View2D a("a", m, k), b("b", k, n), c("c", m, n);
+
+Kokkos::parallel_for("matrix_multiply", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {m, n}),
+  KOKKOS_LAMBDA(const int i, const int j) {
+    double sum = 0.0;
+    for (int l = 0; l < k; l++) {
+      sum += a(i, l) * b(l, j);  // Using 2D indexing
+    }
+    c(i, j) = alpha * sum + beta * c(i, j);
+  }
+);
+```
+
+**Alternative version with 1D indexing** (if you need to keep your original indexing pattern):
+
+```cpp
+Kokkos::parallel_for("matrix_multiply", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {m, n}),
+  KOKKOS_LAMBDA(const int i, const int j) {
+    double sum = 0.0;
+    for (int l = 0; l < k; l++) {
+      sum += a[i * lda + l] * b[l * ldb + j];
+    }
+    c[i * ldc + j] = alpha * sum + beta * c[i * ldc + j];
+  }
+);
+```
+
+**Key changes made:**
+
+1. **Parallelization**: The outer two loops (i, j) are parallelized using `Kokkos::MDRangePolicy<Rank<2>>` for 2D parallelism.
+
+2. **Kernel structure**: 
+   - The inner reduction loop (l) remains sequential within each thread
+   - Each thread computes one output element c(i,j)
+
+3. **Memory access patterns**:
+   - The first version uses 2D View indexing which is cleaner
+   - The second version maintains your original 1D indexing if needed
+
+4. **Performance considerations**:
+   - For better performance, consider using `Kokkos::TeamPolicy` with vectorization for the inner loop
+   - Ensure your Views have appropriate memory layouts (LayoutLeft/LayoutRight) for your access patterns
+
+**To use this code, you'll need to:**
+1. Initialize Kokkos: `Kokkos::initialize(argc, argv);`
+2. Ensure your data (a, b, c) are Kokkos Views in accessible
+
+### Answer
+
+Kokkos::parallel_for("sgemm", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {n, m}), KOKKOS_LAMBDA (const int i, const int j) {
+  float sum = 0.0f;
+  for (int l = 0; l < k; l++) {
+    sum += a(i,l) * b(l,j);
+  }
+  c(i, j) = alpha * sum + beta * c(i, j);
+ });
+
+
+## Index 22
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 0; i < n; i++) {
+  y[i] = 0.0;
+  for (j = row[i]; j < row[i + 1]; j++) {
+    y[i] += val[j] * x[col[j]];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your sparse matrix-vector multiplication (SpMV) code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming you have Kokkos Views for your data structures
+// y, x, val, col, row are Kokkos Views
+
+Kokkos::parallel_for("SpMV", n, KOKKOS_LAMBDA(const int i) {
+    double sum = 0.0;
+    for (int j = row(i); j < row(i + 1); j++) {
+        sum += val(j) * x(col(j));
+    }
+    y(i) = sum;
+});
+```
+
+**Key changes made:**
+
+1. **Parallelization**: The outer loop is parallelized using `Kokkos::parallel_for`
+2. **Lambda function**: Uses `KOKKOS_LAMBDA` for device execution
+3. **Access patterns**: Changed array access `[]` to `()` for Kokkos Views
+4. **Reduction**: Each thread computes its own `sum` locally, avoiding race conditions since each thread writes to a unique `y(i)`
+
+**Additional considerations:**
+
+1. **Memory spaces**: Ensure your Views (`y`, `x`, `val`, `col`, `row`) are in the correct memory space for your execution policy
+2. **Execution policy**: You can add an execution policy for more control:
+   ```cpp
+   Kokkos::parallel_for(Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(const int i) {
+       // ... same kernel
+   });
+   ```
+3. **Team/Thread parallelism**: For more advanced optimization on GPUs, you might consider hierarchical parallelism:
+   ```cpp
+   Kokkos::parallel_for("SpMV", Kokkos::TeamPolicy<>(n, Kokkos::AUTO),
+       KOKKOS_LAMBDA(const Kokkos::TeamPolicy<>::member_type& team) {
+           int i = team.league_rank();
+           double sum = 0.0;
+           Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, row(i), row(i+1)),
+               [=](const int j, double& local_sum) {
+                   local_sum += val(j) * x(col(j));
+               }, sum);
+           Kokkos::single(Kokkos::PerTeam(team), [&]() {
+               y(i) = sum;
+           });
+       });
+   ```
+
+The simple version should work well for CPU execution. For GPU execution, consider the team-based approach for better performance with irregular sparse patterns.
+
+### Answer
+
+Kokkos::parallel_for("spmv", Kokkos::RangePolicy(0, n), KOKKOS_LAMBDA(const int i) {
+  y(i) = 0.0;
+  for (int j = row(i); j < row(i + 1); ++j) {
+    y(i) += val(j) * x(col(j));
+  }
+});
+
+
+## Index 23
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (int col = 0; i < num_cols; col++) {
+  for (int i = col_ptr[col]; i < col_ptr[col+1]; i++) {
+    y[row_ind[i]] += values[i] * x[col];
+  }
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your sparse matrix-vector multiplication code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming the following Kokkos Views are already defined:
+// col_ptr, row_ind, values, x, y
+// y should be initialized to zero before this kernel
+
+Kokkos::parallel_for("spmv_csc", num_cols, KOKKOS_LAMBDA(const int col) {
+    const double x_col = x(col);
+    const int start = col_ptr(col);
+    const int end = col_ptr(col + 1);
+    
+    for (int i = start; i < end; i++) {
+        const int row = row_ind(i);
+        Kokkos::atomic_add(&y(row), values(i) * x_col);
+    }
+});
+```
+
+**Key changes and explanations:**
+
+1. **Parallelization strategy**: The outer loop over columns is parallelized using `Kokkos::parallel_for`. Each thread/team handles a different column.
+
+2. **Atomic operations**: Since multiple threads might try to update the same `y` element (if the matrix has multiple non-zeros in the same row from different columns), we use `Kokkos::atomic_add` to ensure thread-safe updates.
+
+3. **Memory access patterns**: 
+   - `x(col)` is read once per column and reused for all non-zeros in that column
+   - `col_ptr` accesses are coalesced (contiguous memory access)
+   - `row_ind` and `values` accesses are irregular but unavoidable in sparse operations
+
+4. **Performance considerations**:
+   - For better performance on GPUs, consider using a team policy with vectorization
+   - If the matrix is very sparse with irregular row access patterns, atomic operations might cause contention
+   - For extremely sparse matrices, consider parallelizing over non-zeros instead of columns
+
+**Alternative version with team policy** (better for GPUs):
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+using execution_space = Kokkos::DefaultExecutionSpace;
+using team_policy = Kokkos::TeamPolicy<execution_space>;
+using team_member = typename team_policy::member_type;
+
+Kokkos::parallel_for("spmv_csc_team", 
+    team_policy(num_cols, Kokkos::AUTO),
+    KOKKOS_LAMBDA(const team_member& team) {
+        const int col = team.league_rank();
+        const double x_col = x(col);
+        const int start = col_ptr(col);
+        const int end = col_ptr(col + 1);
+        
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, start, end),
+            [&](const int i) {
+                const int row = row_ind(i);
+                Kokkos::atomic_add(&y(row), values(i) * x_col);
+            });
+    });
+```
+
+**Note
+
+### Answer
+
+Kokkos::parallel_for("spmv_csc", Kokkos::RangePolicy(0, num_cols), KOKKOS_LAMBDA(const int col) {
+  for (int i = col_ptr(col); i < col_ptr(col + 1); ++i) {
+    y(row_ind(i)) += values(i) * x(col);
+  }
+});
+
+
+## Index 24
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 1; i < n-1; i++) {
+  u_new[i] = 0.5 * (u[i-1] + u[i+1]) - u[i];
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u and u_new are Kokkos Views
+Kokkos::View<double*> u, u_new;
+int n = u.extent(0);
+
+// Parallel execution using Kokkos
+Kokkos::parallel_for("stencil_update", n-2, KOKKOS_LAMBDA(int i) {
+    int idx = i + 1;  // Shift index since loop starts at 1
+    u_new[idx] = 0.5 * (u[idx-1] + u[idx+1]) - u[idx];
+});
+```
+
+Key changes made:
+1. **Parallelization**: The loop is replaced with `Kokkos::parallel_for`
+2. **Index adjustment**: The loop now runs from 0 to n-2, with `idx = i + 1` to match your original 1..n-2 range
+3. **Kernel label**: Added a descriptive label "stencil_update" for profiling
+4. **Lambda capture**: Used `KOKKOS_LAMBDA` for GPU compatibility (use `KOKKOS_CLASS_LAMBDA` if you need to capture class members)
+
+**Important prerequisites:**
+- Initialize Kokkos with `Kokkos::initialize()` before this code
+- Ensure `u` and `u_new` are properly allocated Kokkos Views
+- Call `Kokkos::finalize()` after all Kokkos operations complete
+- The arrays must be accessible in the execution space (e.g., `Kokkos::View<double*, Kokkos::HostSpace>` for CPU, or `Kokkos::DefaultExecutionSpace::memory_space` for default device)
+
+This will execute in parallel according to your Kokkos configuration (OpenMP, CUDA, etc.).
+
+### Answer
+
+Kokkos::parallel_for("stencil", Kokkos::RangePolicy(1, n-1), KOKKOS_LAMBDA(const int i) {
+  u_new(i) = 0.5 * (u(i-1) + u(i+1)) - u(i);
+});
+
+
+## Index 25
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you parallelize this sequential code using Kokkos?
+for (i = 1; i < n-1; i++) {
+  for (j = 1; j < n-1; j++) {
+    u_new[i,j] = (u[i-1][j] + u[i][j+1] + u[i][j-1] + u[i+1][j] + f[i][j]) * 0.25;
+  }
+}
+
+
+### Response
+
+Here's the Kokkos parallelized version of your sequential code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u, u_new, and f are Kokkos Views
+// with dimensions (n, n) and layout Kokkos::LayoutRight (or LayoutLeft)
+Kokkos::parallel_for("stencil_update", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}),
+  KOKKOS_LAMBDA(const int i, const int j) {
+    u_new(i, j) = (u(i-1, j) + u(i, j+1) + u(i, j-1) + u(i+1, j) + f(i, j)) * 0.25;
+  }
+);
+```
+
+Key changes made:
+1. **Parallelization**: The nested loops are replaced with `Kokkos::parallel_for`
+2. **MDRangePolicy**: Uses a 2D range policy for efficient traversal of the 2D iteration space
+3. **Lambda function**: The computation is encapsulated in a KOKKOS_LAMBDA
+4. **Indexing**: Changed from `[i][j]` to `(i, j)` for Kokkos View access
+5. **Bounds**: The range is from `{1, 1}` to `{n-1, n-1}` (exclusive of the upper bound)
+
+**Important notes:**
+- Ensure `Kokkos::initialize()` has been called before this code
+- The Views `u`, `u_new`, and `f` must be properly allocated as Kokkos Views
+- This assumes no data dependencies between iterations (true for this stencil operation)
+- For optimal performance, consider:
+  - Using appropriate memory spaces (e.g., `Kokkos::CudaSpace` for GPU)
+  - Choosing the right layout based on your access patterns
+  - Adding execution space template parameters if needed
+
+**Alternative using nested parallel_for:**
+```cpp
+Kokkos::parallel_for("stencil_update", 
+  Kokkos::RangePolicy<>(1, n-1),
+  KOKKOS_LAMBDA(const int i) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(1, n-1),
+      [&](const int j) {
+        u_new(i, j) = (u(i-1, j) + u(i, j+1) + u(i, j-1) + u(i+1, j) + f(i, j)) * 0.25;
+      }
+    );
+  }
+);
+```
+
+This version uses nested parallelism which can be beneficial for some architectures (like GPUs with hierarchical parallelism).
+
+### Answer
+
+Kokkos::parallel_for("stencil_2D", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j) {
+  u_new(i,j) = (u(i-1,j) + u(i,j+1) + u(i,j-1 + u(i+1,j) + f(i,j)) * 0.25;
+});
+
+
+## Index 26
+
+### Context
+
+Sequential to Kokkos translation
+
+
+### Question
+
+Can you translate this Sequential code using Kokkos?
+for (i = 1; i < n-1; i++) {
+  for (j = 1; j < n-1; j++) {
+    for (k = 1; k < n-1; k++) {
+      u_new[i][j][k] = 0.125 * (u[i-1][j][k] + u[i][j+1][k] + u[i][j-1][k] + u[i+1][j][k] + u[i][j][k-1] + u[i][j][k+1] + f[i][j][k] * dx * dy * dz);
+    }
+  }
+}
+
+
+### Response
+
+Here's the Kokkos translation of your sequential 3D stencil code:
+
+```cpp
+#include <Kokkos_Core.hpp>
+
+// Assuming u_new, u, and f are Kokkos::View objects
+// with dimensions (n, n, n) or similar
+
+Kokkos::parallel_for("3D_stencil", 
+  Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}),
+  KOKKOS_LAMBDA(int i, int j, int k) {
+    u_new(i, j, k) = 0.125 * (
+      u(i-1, j, k) + u(i, j+1, k) + u(i, j-1, k) +
+      u(i+1, j, k) + u(i, j, k-1) + u(i, j, k+1) +
+      f(i, j, k) * dx * dy * dz
+    );
+  }
+);
+```
+
+Key changes made:
+1. **Parallelization**: Replaced sequential loops with `Kokkos::parallel_for`
+2. **Multi-dimensional range**: Used `MDRangePolicy<Rank<3>>` for efficient 3D iteration
+3. **Index bounds**: Set range from {1,1,1} to {n-1,n-1,n-1} (exclusive upper bound)
+4. **Array access**: Changed `[i][j][k]` to `(i, j, k)` for Kokkos::View
+5. **Lambda capture**: Used `KOKKOS_LAMBDA` for device-compatible lambda
+
+**Prerequisites:**
+- Initialize Kokkos: `Kokkos::initialize(argc, argv);`
+- Arrays must be `Kokkos::View<double***>` or similar
+- Include appropriate headers
+- Compile with Kokkos flags
+
+**Note:** This assumes no data dependencies between iterations (true for this stencil computation). For performance, consider:
+- Using `Kokkos::LayoutLeft/Right` based on access patterns
+- Tiling with `Kokkos::Tile` for cache optimization
+- Adding execution space specification (e.g., `Kokkos::DefaultExecutionSpace`)
+
+### Answer
+
+Kokkos::parallel_for("stencil_3D", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 1, 1}, {n-1, n-1, n-1}), KOKKOS_LAMBDA(const int i, const int j, cont int k) {
+  u_new(i,j,k) = 0.125 * (u(i-1,j,k) + u(i,j+1,k) + u(i,j-1,k) + u(i+1,j,k) + u(i,j,k-1) + u(i,j,k+1) + f(i,j,k) * dx * dy * dz);
+});
+
+
+
